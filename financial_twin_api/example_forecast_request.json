@@ -1,0 +1,606 @@
+{
+    "transactions": [
+        {
+            "date": "2023-11-01T10:30:00",
+            "category": "food",
+            "amount": 35.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-01T14:20:00",
+            "category": "transport",
+            "amount": 12.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-02T09:15:00",
+            "category": "housing",
+            "amount": 450.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-02T16:45:00",
+            "category": "utilities",
+            "amount": 65.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-03T11:00:00",
+            "category": "food",
+            "amount": 42.30,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-03T13:30:00",
+            "category": "entertainment",
+            "amount": 25.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-04T10:00:00",
+            "category": "food",
+            "amount": 38.75,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-05T15:20:00",
+            "category": "transport",
+            "amount": 15.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-06T12:00:00",
+            "category": "healthcare",
+            "amount": 80.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-07T09:30:00",
+            "category": "food",
+            "amount": 45.20,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-08T14:00:00",
+            "category": "clothing",
+            "amount": 120.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-09T11:45:00",
+            "category": "food",
+            "amount": 52.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-10T16:30:00",
+            "category": "transport",
+            "amount": 18.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-11T10:15:00",
+            "category": "food",
+            "amount": 41.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-12T13:00:00",
+            "category": "entertainment",
+            "amount": 30.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-13T09:00:00",
+            "category": "food",
+            "amount": 48.90,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-14T11:30:00",
+            "category": "transport",
+            "amount": 14.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-15T00:00:00",
+            "category": "salary",
+            "amount": 2500.00,
+            "type": "income"
+        },
+        {
+            "date": "2023-11-15T10:20:00",
+            "category": "food",
+            "amount": 39.80,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-16T15:45:00",
+            "category": "utilities",
+            "amount": 55.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-17T12:30:00",
+            "category": "food",
+            "amount": 44.20,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-18T09:15:00",
+            "category": "transport",
+            "amount": 16.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-19T14:00:00",
+            "category": "food",
+            "amount": 51.30,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-20T11:00:00",
+            "category": "entertainment",
+            "amount": 35.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-21T10:30:00",
+            "category": "food",
+            "amount": 46.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-22T16:20:00",
+            "category": "healthcare",
+            "amount": 75.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-23T13:15:00",
+            "category": "food",
+            "amount": 40.90,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-24T09:45:00",
+            "category": "transport",
+            "amount": 13.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-25T14:30:00",
+            "category": "food",
+            "amount": 47.80,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-26T11:20:00",
+            "category": "clothing",
+            "amount": 95.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-27T10:00:00",
+            "category": "food",
+            "amount": 43.60,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-28T15:30:00",
+            "category": "entertainment",
+            "amount": 28.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-29T12:45:00",
+            "category": "food",
+            "amount": 49.20,
+            "type": "expense"
+        },
+        {
+            "date": "2023-11-30T09:30:00",
+            "category": "transport",
+            "amount": 17.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-01T10:30:00",
+            "category": "food",
+            "amount": 38.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-01T14:20:00",
+            "category": "transport",
+            "amount": 11.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-02T09:15:00",
+            "category": "housing",
+            "amount": 450.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-02T16:45:00",
+            "category": "utilities",
+            "amount": 68.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-03T11:00:00",
+            "category": "food",
+            "amount": 45.30,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-04T13:30:00",
+            "category": "entertainment",
+            "amount": 32.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-05T10:00:00",
+            "category": "food",
+            "amount": 41.75,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-06T15:20:00",
+            "category": "transport",
+            "amount": 14.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-07T12:00:00",
+            "category": "healthcare",
+            "amount": 85.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-08T09:30:00",
+            "category": "food",
+            "amount": 48.20,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-09T14:00:00",
+            "category": "clothing",
+            "amount": 135.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-10T11:45:00",
+            "category": "food",
+            "amount": 54.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-11T16:30:00",
+            "category": "transport",
+            "amount": 19.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-12T10:15:00",
+            "category": "food",
+            "amount": 43.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-13T13:00:00",
+            "category": "entertainment",
+            "amount": 38.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-14T09:00:00",
+            "category": "food",
+            "amount": 50.90,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-15T00:00:00",
+            "category": "salary",
+            "amount": 2500.00,
+            "type": "income"
+        },
+        {
+            "date": "2023-12-15T11:30:00",
+            "category": "transport",
+            "amount": 15.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-16T10:20:00",
+            "category": "food",
+            "amount": 42.80,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-17T15:45:00",
+            "category": "utilities",
+            "amount": 58.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-18T12:30:00",
+            "category": "food",
+            "amount": 46.20,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-19T09:15:00",
+            "category": "transport",
+            "amount": 17.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-20T14:00:00",
+            "category": "food",
+            "amount": 53.30,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-21T11:00:00",
+            "category": "entertainment",
+            "amount": 40.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-22T10:30:00",
+            "category": "food",
+            "amount": 48.50,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-23T16:20:00",
+            "category": "healthcare",
+            "amount": 78.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-24T13:15:00",
+            "category": "food",
+            "amount": 55.90,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-25T09:45:00",
+            "category": "entertainment",
+            "amount": 65.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-26T14:30:00",
+            "category": "food",
+            "amount": 49.80,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-27T11:20:00",
+            "category": "clothing",
+            "amount": 110.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-28T10:00:00",
+            "category": "food",
+            "amount": 45.60,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-29T15:30:00",
+            "category": "entertainment",
+            "amount": 35.00,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-30T12:45:00",
+            "category": "food",
+            "amount": 51.20,
+            "type": "expense"
+        },
+        {
+            "date": "2023-12-31T09:30:00",
+            "category": "transport",
+            "amount": 18.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-01T10:30:00",
+            "category": "food",
+            "amount": 40.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-02T14:20:00",
+            "category": "transport",
+            "amount": 12.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-03T09:15:00",
+            "category": "housing",
+            "amount": 450.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-04T16:45:00",
+            "category": "utilities",
+            "amount": 70.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-05T11:00:00",
+            "category": "food",
+            "amount": 44.30,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-06T13:30:00",
+            "category": "entertainment",
+            "amount": 30.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-07T10:00:00",
+            "category": "food",
+            "amount": 39.75,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-08T15:20:00",
+            "category": "transport",
+            "amount": 15.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-09T12:00:00",
+            "category": "healthcare",
+            "amount": 82.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-10T09:30:00",
+            "category": "food",
+            "amount": 46.20,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-11T14:00:00",
+            "category": "clothing",
+            "amount": 125.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-12T11:45:00",
+            "category": "food",
+            "amount": 53.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-13T16:30:00",
+            "category": "transport",
+            "amount": 18.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-14T10:15:00",
+            "category": "food",
+            "amount": 42.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-15T00:00:00",
+            "category": "salary",
+            "amount": 2500.00,
+            "type": "income"
+        },
+        {
+            "date": "2024-01-15T13:00:00",
+            "category": "entertainment",
+            "amount": 33.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-16T09:00:00",
+            "category": "food",
+            "amount": 49.90,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-17T11:30:00",
+            "category": "transport",
+            "amount": 14.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-18T10:20:00",
+            "category": "food",
+            "amount": 41.80,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-19T15:45:00",
+            "category": "utilities",
+            "amount": 60.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-20T12:30:00",
+            "category": "food",
+            "amount": 47.20,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-21T09:15:00",
+            "category": "transport",
+            "amount": 16.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-22T14:00:00",
+            "category": "food",
+            "amount": 52.30,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-23T11:00:00",
+            "category": "entertainment",
+            "amount": 37.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-24T10:30:00",
+            "category": "food",
+            "amount": 47.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-25T16:20:00",
+            "category": "healthcare",
+            "amount": 80.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-26T13:15:00",
+            "category": "food",
+            "amount": 43.90,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-27T09:45:00",
+            "category": "transport",
+            "amount": 13.50,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-28T14:30:00",
+            "category": "food",
+            "amount": 48.80,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-29T11:20:00",
+            "category": "clothing",
+            "amount": 100.00,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-30T10:00:00",
+            "category": "food",
+            "amount": 44.60,
+            "type": "expense"
+        },
+        {
+            "date": "2024-01-31T15:30:00",
+            "category": "entertainment",
+            "amount": 31.00,
+            "type": "expense"
+        }
+    ],
+    "forecast_days": 90,
+    "include_holidays": true
+}

@@ -4,13 +4,19 @@ Tunisian context with realistic synthetic data
 """
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, List, Optional
 import logging
+import pickle
+import os
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import numpy as np
+import pandas as pd
+from prophet import Prophet
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
@@ -53,6 +59,180 @@ class Transaction(BaseModel):
     type: str = "expense"  # income or expense
 
 
+class UserCategoryRequest(BaseModel):
+    """Request for user categorization."""
+    total_income: float = Field(gt=0, description="Total monthly income")
+    total_expenses: float = Field(gt=0, description="Total monthly expenses")
+    fixed_costs: float = Field(ge=0, description="Sum of rent, loans, insurance, utilities, education")
+    discretionary_costs: float = Field(ge=0, description="Sum of food, transport, entertainment, shopping")
+
+
+@app.post("/api/v1/categorize-user")
+async def categorize_user_endpoint(request: UserCategoryRequest) -> dict:
+    """
+    Categorize a user into spending profiles using K-Means clustering.
+    Matches the updated model trained on aggregated user profiles.
+    """
+    
+    if categorization_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Categorization model not available. Please run the POC notebook first."
+        )
+    
+    try:
+        # Extract model components
+        kmeans = categorization_model['kmeans']
+        scaler = categorization_model['scaler']
+        cluster_labels = categorization_model['cluster_labels']
+        
+        # Calculate derived features matching the notebook
+        savings_rate = (request.total_income - request.total_expenses) / max(request.total_income, 1)
+        fixed_cost_ratio = request.fixed_costs / max(request.total_expenses, 1)
+        discretionary_cost_ratio = request.discretionary_costs / max(request.total_expenses, 1)
+        
+        # Create feature vector [total_income, total_expenses, savings_rate, fixed_cost_ratio, discretionary_cost_ratio]
+        features = np.array([[
+            request.total_income,
+            request.total_expenses,
+            savings_rate,
+            fixed_cost_ratio,
+            discretionary_cost_ratio
+        ]])
+        
+        # Scale features
+        features_scaled = scaler.transform(features)
+        
+        # Predict cluster
+        cluster = int(kmeans.predict(features_scaled)[0])
+        
+        # Get category
+        category = cluster_labels[cluster]
+        
+        # Get category description
+        category_descriptions = {
+            'Super Saver': 'Excellent financial discipline! High savings rate (>40%).',
+            'Smart Saver': 'Great job! You maintain good savings (>20%) and controlled spending.',
+            'Balanced': 'Healthy balance between spending and saving.',
+            'Big Spender': 'High spending relative to income. Savings are low.',
+            'Wild Spender': 'Alert! Spending exceeds income or savings are dangerously low.'
+        }
+        
+        # Calculate financial health score (0-100) based on savings rate and fixed cost ratio
+        # Higher savings = better, Lower fixed costs = better flexibility
+        base_score = min(100, max(0, int((savings_rate + 0.2) * 80)))
+        flexibility_penalty = max(0, int((fixed_cost_ratio - 0.5) * 40)) # Penalty if fixed costs > 50%
+        health_score = max(0, base_score - flexibility_penalty)
+        
+        return {
+            "status": "success",
+            "category": category,
+            "cluster": cluster,
+            "description": category_descriptions.get(category, "Category description not available"),
+            "metrics": {
+                "savings_rate": round(savings_rate, 3),
+                "fixed_cost_ratio": round(fixed_cost_ratio, 2),
+                "discretionary_cost_ratio": round(discretionary_cost_ratio, 2),
+                "financial_health_score": health_score
+            },
+            "recommendations": _get_recommendations(category, savings_rate)
+        }
+    
+    except Exception as e:
+        logger.error(f"Categorization error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Categorization failed: {str(e)}"
+        )
+
+
+def _get_recommendations(category: str, savings_rate: float) -> List[str]:
+    """Get personalized recommendations based on category."""
+    recommendations = {
+        'Super Saver': [
+            "Consider investing your surplus savings (Bourse de Tunis, SICAVs)",
+            "Review your insurance coverage to protect your wealth",
+            "Consider making charitable contributions (Zakat/Sadaqah)"
+        ],
+        'Smart Saver': [
+            "Keep up the good work! Aim for 6 months emergency fund",
+            "Consider mid-term investments like 'Comptes Épargne Logement'",
+            "Look for tax-saving opportunities (Assurance Vie)"
+        ],
+        'Balanced': [
+            "Try to auto-transfer savings at the start of the month",
+            "Review subscription services you might not use",
+            "Aim to increase savings rate by 1% each month"
+        ],
+        'Big Spender': [
+            "Track every millime spent for 30 days",
+            "Identify the 'Latte Factor' - small daily expenses adding up",
+            "Use the 50/30/20 rule: 50% Needs, 30% Wants, 20% Savings",
+            "Avoid impulsively buying during sales/soldes"
+        ],
+        'Wild Spender': [
+            "URGENT: Stop using credit cards/loans immediately",
+            "Cut discretionary spending (Eating out, Entertainment) to zero",
+            "Negotiate with creditors if you have debt",
+            "Consider a side hustle for extra income"
+        ]
+    }
+    
+    defaults = ["Maintain healthy financial habits", "Track your expenses regularly"]
+    return recommendations.get(category, defaults)
+
+
+@app.get("/api/v1/categorize-user/demo")
+async def categorize_user_demo(user_id: str = "demo_user") -> dict:
+    """
+    Demo endpoint: Categorize a user based on mock profile data.
+    """
+    
+    # Generate mock profile data compatible with new schema
+    # Randomly assign a profile type for variety
+    profile_type = np.random.choice(['saver', 'balanced', 'spender'])
+    
+    income = 3000.0
+    
+    if profile_type == 'saver':
+        expenses = income * np.random.uniform(0.4, 0.6)
+        fixed_ratio = 0.4
+    elif profile_type == 'balanced':
+        expenses = income * np.random.uniform(0.7, 0.9)
+        fixed_ratio = 0.5
+    else:
+        expenses = income * np.random.uniform(0.95, 1.2)
+        fixed_ratio = 0.6
+        
+    fixed_costs = expenses * fixed_ratio
+    discretionary_costs = expenses * (1 - fixed_ratio)
+    
+    request = UserCategoryRequest(
+        total_income=round(income, 2),
+        total_expenses=round(expenses, 2),
+        fixed_costs=round(fixed_costs, 2),
+        discretionary_costs=round(discretionary_costs, 2)
+    )
+    
+    result = await categorize_user_endpoint(request)
+    
+    result['user_data'] = {
+        'user_id': user_id,
+        'profile_type_simulated': profile_type,
+        'income': request.total_income,
+        'expenses': request.total_expenses
+    }
+    
+    return result
+
+
+class ForecastRequest(BaseModel):
+    """Request for Prophet-based forecasting."""
+    transactions: List[Transaction]
+    forecast_days: int = Field(default=90, ge=1, le=365)
+    include_holidays: bool = Field(default=True)
+
+
 class LoanRequest(BaseModel):
     """Loan recommendation request."""
     goal: str = Field(default="Emergency fund")
@@ -74,6 +254,21 @@ class ScenarioRequest(BaseModel):
 # ============================================================================
 
 twins_db: dict[str, dict] = {}
+mock_transactions_db: dict[str, List[dict]] = {}
+
+# Load categorization model (will be created after running notebook)
+categorization_model = None
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'user_category_model.pkl')
+
+try:
+    if os.path.exists(MODEL_PATH):
+        with open(MODEL_PATH, 'rb') as f:
+            categorization_model = pickle.load(f)
+        logger.info("✓ User categorization model loaded successfully")
+    else:
+        logger.warning("⚠ User categorization model not found. Run POC notebook first.")
+except Exception as e:
+    logger.error(f"Error loading categorization model: {e}")
 
 
 # ============================================================================
@@ -99,6 +294,16 @@ MONTHLY_MULTIPLIERS = {
 }
 
 HIGH_EXPENSE_MONTHS = [3, 4, 6, 7, 8, 9]  # Ramadan, Eid, Summer, Back-to-school
+
+# Tunisian Holidays for Prophet
+TUNISIAN_HOLIDAYS = pd.DataFrame([
+    {'holiday': 'Ramadan', 'ds': pd.to_datetime('2024-03-11'), 'lower_window': 0, 'upper_window': 30},
+    {'holiday': 'Eid_al_Fitr', 'ds': pd.to_datetime('2024-04-10'), 'lower_window': 0, 'upper_window': 3},
+    {'holiday': 'Eid_al_Adha', 'ds': pd.to_datetime('2024-06-16'), 'lower_window': 0, 'upper_window': 4},
+    {'holiday': 'Back_to_School', 'ds': pd.to_datetime('2024-09-15'), 'lower_window': -7, 'upper_window': 7},
+    {'holiday': 'Summer_Period', 'ds': pd.to_datetime('2024-07-01'), 'lower_window': 0, 'upper_window': 60},
+    {'holiday': 'New_Year', 'ds': pd.to_datetime('2024-01-01'), 'lower_window': 0, 'upper_window': 1},
+])
 
 
 def get_expense_ratios(dependents: int = 0) -> dict[str, float]:
@@ -298,6 +503,142 @@ def _months_to_target(timeline: list, target: float) -> int | None:
     return None
 
 
+def generate_mock_transactions(user_id: str, num_days: int = 365) -> List[dict]:
+    """Generate realistic mock transaction data for a user."""
+    np.random.seed(hash(user_id) % 2**32)
+    
+    transactions = []
+    start_date = datetime.now() - timedelta(days=num_days)
+    
+    # Base daily spending pattern
+    base_amount = 30.0  # TND
+    
+    for day in range(num_days):
+        current_date = start_date + timedelta(days=day)
+        month = current_date.month
+        
+        # Apply seasonal multiplier
+        multiplier = MONTHLY_MULTIPLIERS.get(month, 1.0)
+        
+        # Generate 1-3 transactions per day
+        num_transactions = np.random.randint(1, 4)
+        
+        for _ in range(num_transactions):
+            # Random category
+            category = np.random.choice(EXPENSE_CATEGORIES)
+            
+            # Amount with some randomness
+            amount = base_amount * multiplier * np.random.uniform(0.5, 2.0)
+            
+            # Occasional income
+            if np.random.random() < 0.05:  # 5% chance of income
+                trans_type = "income"
+                amount = base_amount * np.random.uniform(30, 100)  # Larger amounts for income
+            else:
+                trans_type = "expense"
+            
+            transactions.append({
+                "date": current_date.isoformat(),
+                "category": category,
+                "amount": round(amount, 2),
+                "type": trans_type
+            })
+    
+    return transactions
+
+
+def forecast_with_prophet(
+    transactions: List[Transaction], 
+    forecast_days: int = 90,
+    include_holidays: bool = True
+) -> dict[str, Any]:
+    """Use Prophet to forecast future transactions."""
+    
+    # Prepare data for Prophet
+    df_data = []
+    for trans in transactions:
+        df_data.append({
+            'ds': trans.date,
+            'y': trans.amount if trans.type == "expense" else -trans.amount  # Negative for income
+        })
+    
+    df = pd.DataFrame(df_data)
+    
+    # Aggregate by day
+    df_daily = df.groupby('ds').agg({'y': 'sum'}).reset_index()
+    df_daily = df_daily.sort_values('ds')
+    
+    # Initialize Prophet model
+    model = Prophet(
+        yearly_seasonality=True,
+        weekly_seasonality=True,
+        daily_seasonality=False,
+        changepoint_prior_scale=0.05,
+    )
+    
+    # Add Tunisian holidays if requested
+    if include_holidays:
+        model.add_country_holidays(country_name='TN')
+        # Add custom holidays
+        for _, holiday in TUNISIAN_HOLIDAYS.iterrows():
+            model.add_seasonality(
+                name=holiday['holiday'],
+                period=365.25,
+                fourier_order=3
+            )
+    
+    # Fit the model
+    model.fit(df_daily)
+    
+    # Create future dataframe
+    future = model.make_future_dataframe(periods=forecast_days)
+    
+    # Predict
+    forecast = model.predict(future)
+    
+    # Extract forecast data (only future dates)
+    last_date = df_daily['ds'].max()
+    forecast_future = forecast[forecast['ds'] > last_date].copy()
+    
+    # Prepare response
+    predictions = []
+    for _, row in forecast_future.iterrows():
+        predictions.append({
+            "date": row['ds'].strftime('%Y-%m-%d'),
+            "predicted_amount": round(max(0, row['yhat']), 2),  # Don't allow negative
+            "lower_bound": round(max(0, row['yhat_lower']), 2),
+            "upper_bound": round(max(0, row['yhat_upper']), 2),
+            "trend": round(row['trend'], 2),
+        })
+    
+    # Calculate summary statistics
+    total_predicted = sum(p['predicted_amount'] for p in predictions)
+    avg_daily = total_predicted / len(predictions) if predictions else 0
+    
+    # Identify high-expense periods
+    high_expense_days = [
+        p for p in predictions 
+        if p['predicted_amount'] > avg_daily * 1.5
+    ]
+    
+    return {
+        "forecast_period_days": forecast_days,
+        "predictions": predictions,
+        "summary": {
+            "total_predicted_expenses": round(total_predicted, 2),
+            "average_daily_expense": round(avg_daily, 2),
+            "high_expense_days_count": len(high_expense_days),
+            "high_expense_days": [p['date'] for p in high_expense_days[:10]],  # Top 10
+        },
+        "model_info": {
+            "training_data_points": len(df_daily),
+            "includes_holidays": include_holidays,
+            "forecast_start_date": predictions[0]['date'] if predictions else None,
+            "forecast_end_date": predictions[-1]['date'] if predictions else None,
+        }
+    }
+
+
 def recommend_loan(twin: dict, request: LoanRequest) -> dict[str, Any]:
     """Generate loan recommendations."""
     
@@ -481,6 +822,119 @@ async def get_context() -> dict:
             "avoid_borrowing_months": HIGH_EXPENSE_MONTHS,
         },
     }
+
+
+@app.get("/api/v1/mock-data/{user_id}")
+async def get_mock_data(user_id: str, days: int = 365) -> dict:
+    """Generate and return mock transaction data for a user."""
+    if user_id not in mock_transactions_db:
+        mock_transactions_db[user_id] = generate_mock_transactions(user_id, days)
+    
+    return {
+        "user_id": user_id,
+        "transaction_count": len(mock_transactions_db[user_id]),
+        "transactions": mock_transactions_db[user_id],
+        "date_range": {
+            "start": mock_transactions_db[user_id][0]["date"],
+            "end": mock_transactions_db[user_id][-1]["date"],
+        }
+    }
+
+
+@app.post("/api/v1/forecast")
+async def create_forecast(request: ForecastRequest) -> dict:
+    """Generate Prophet-based forecast for future expenses."""
+    
+    if not request.transactions:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one transaction is required for forecasting"
+        )
+    
+    try:
+        forecast_result = forecast_with_prophet(
+            request.transactions,
+            request.forecast_days,
+            request.include_holidays
+        )
+        
+        return {
+            "status": "success",
+            "forecast": forecast_result,
+            "request_info": {
+                "input_transactions": len(request.transactions),
+                "forecast_days": request.forecast_days,
+                "holidays_included": request.include_holidays,
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"Forecasting error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Forecasting failed: {str(e)}"
+        )
+
+
+@app.get("/api/v1/forecast/demo")
+async def get_demo_forecast(
+    user_id: str = "demo_user",
+    forecast_days: int = 90,
+    include_holidays: bool = True
+) -> dict:
+    """
+    Get a demo forecast using pre-generated 3-month transaction data.
+    Perfect for frontend integration without needing to POST data.
+    
+    Query Parameters:
+    - user_id: User identifier (default: demo_user)
+    - forecast_days: Number of days to forecast (default: 90, max: 365)
+    - include_holidays: Include Tunisian holidays in forecast (default: true)
+    """
+    
+    # Generate or retrieve mock data for the user
+    if user_id not in mock_transactions_db:
+        mock_transactions_db[user_id] = generate_mock_transactions(user_id, num_days=90)
+    
+    # Convert dict transactions to Transaction objects
+    transactions = [
+        Transaction(
+            date=datetime.fromisoformat(t["date"]),
+            category=t["category"],
+            amount=t["amount"],
+            type=t["type"]
+        )
+        for t in mock_transactions_db[user_id]
+    ]
+    
+    try:
+        forecast_result = forecast_with_prophet(
+            transactions,
+            forecast_days,
+            include_holidays
+        )
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "forecast": forecast_result,
+            "input_data": {
+                "transaction_count": len(transactions),
+                "date_range": {
+                    "start": mock_transactions_db[user_id][0]["date"],
+                    "end": mock_transactions_db[user_id][-1]["date"],
+                },
+                "forecast_days": forecast_days,
+                "holidays_included": include_holidays,
+            }
+        }
+    
+    except Exception as e:
+        logger.error(f"Demo forecasting error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Forecasting failed: {str(e)}"
+        )
 
 
 # ============================================================================
