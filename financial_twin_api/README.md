@@ -1,14 +1,14 @@
-# Financial Digital Twin API 🇹🇳
+# Financial Digital Twin API
 
 **Personalized financial predictions for Tunisian users** - A hackathon demo project.
 
 ## Features
 
-- 🧬 **Digital Twin Creation** - Generate a personalized financial model from user profile
-- 📊 **Cash Flow Forecasting** - 12-month predictions with Tunisian seasonal patterns
-- 🎯 **What-If Scenarios** - Simulate income changes, expense adjustments, and loans
-- 💰 **Loan Recommendations** - Affordability analysis with timing advice
-- 🌙 **Tunisian Context** - Ramadan, Eid al-Fitr, Eid al-Adha, Summer, Back-to-school patterns
+- **Digital Twin Creation** - Generate a personalized financial model from user profile
+- **Cash Flow Forecasting** - 12-month predictions with Tunisian seasonal patterns
+- **What-If Scenarios** - Simulate income changes, expense adjustments, and loans
+- **Loan Recommendations** - Affordability analysis with timing advice
+- **Tunisian Context** - Ramadan, Eid al-Fitr, Eid al-Adha, Summer, Back-to-school patterns
 
 ## Quick Start
 
