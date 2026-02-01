@@ -18,10 +18,10 @@ import {
   type AdvisorAction,
   getLoansByUser,
   type Loan,
-} from "@/mocks/store"
-import { LOAN_PURPOSES } from "@/mocks/seed-data"
-import { events } from "@/mocks/seed-data"
-import { generateTwinData, classifyClient, calculateLoanRiskScore } from "@/mocks/forecast"
+} from "@/data/store"
+import { LOAN_PURPOSES } from "@/data/seed-data"
+import { events } from "@/data/seed-data"
+import { generateTwinData, classifyClient, calculateLoanRiskScore } from "@/data/forecast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

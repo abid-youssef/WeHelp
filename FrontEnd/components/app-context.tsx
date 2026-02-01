@@ -8,8 +8,8 @@ import {
   useEffect,
   type ReactNode,
 } from "react"
-import type { User, Advisor } from "@/mocks/seed-data"
-import { getUsers, getAdvisors } from "@/mocks/store"
+import type { User, Advisor } from "@/data/seed-data"
+import { getUsers, getAdvisors } from "@/data/store"
 
 // Session persistence key
 const SESSION_KEY = "atb_life_companion_session"

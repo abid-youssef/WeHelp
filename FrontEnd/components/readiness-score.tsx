@@ -2,8 +2,8 @@
 
 import { useMemo } from "react"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser, getAnyEventById } from "@/mocks/store"
-import { calculateReadiness, type ReadinessScore as ReadinessScoreType } from "@/mocks/forecast"
+import { getEvents, getTransactionsByUser, getAnyEventById } from "@/data/store"
+import { calculateReadiness, type ReadinessScore as ReadinessScoreType } from "@/data/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"

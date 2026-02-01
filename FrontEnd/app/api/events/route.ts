@@ -6,8 +6,8 @@ import {
   updateCustomEvent,
   deleteCustomEvent,
   getUserById,
-} from "@/mocks/store"
-import type { CustomEvent } from "@/mocks/seed-data"
+} from "@/data/store"
+import type { CustomEvent } from "@/data/seed-data"
 
 // GET /api/events?userId=xxx
 export async function GET(request: Request) {

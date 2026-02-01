@@ -1,5 +1,5 @@
-import { sql, generateId, formatDate, parseNumeric } from '@/mocks/db'
-import type { GoalContribution, ContributionType } from '@/mocks/types'
+import { sql, generateId, formatDate, parseNumeric } from '@/data/db'
+import type { GoalContribution, ContributionType } from '@/data/types'
 import { NextResponse } from 'next/server'
 
 function mapRowToContribution(row: Record<string, unknown>): GoalContribution {

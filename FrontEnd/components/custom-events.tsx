@@ -8,8 +8,8 @@ import {
   updateCustomEvent,
   deleteCustomEvent,
   getGoalsByUser,
-} from "@/mocks/store"
-import type { CustomEvent, Goal } from "@/mocks/seed-data"
+} from "@/data/store"
+import type { CustomEvent, Goal } from "@/data/seed-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

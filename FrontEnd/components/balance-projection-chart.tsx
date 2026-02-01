@@ -23,7 +23,7 @@ import {
   calculateMonthlyFlowBreakdown,
   generateMonthExplanation,
   getUserById,
-} from "@/mocks/store"
+} from "@/data/store"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,7 +44,7 @@ import {
   ChevronRight,
   Lightbulb,
 } from "lucide-react"
-import type { LifeEvent, CustomEvent, Transaction } from "@/mocks/seed-data"
+import type { LifeEvent, CustomEvent, Transaction } from "@/data/seed-data"
 
 interface MonthlyProjection {
   month: string

@@ -6,9 +6,9 @@ import {
   getCustomStressTemplates,
   createCustomStressTemplate,
   deleteCustomStressTemplate,
-} from "@/mocks/store"
-import type { CustomStressTemplate } from "@/mocks/seed-data"
-import { STRESS_PRESETS } from "@/mocks/forecast"
+} from "@/data/store"
+import type { CustomStressTemplate } from "@/data/seed-data"
+import { STRESS_PRESETS } from "@/data/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

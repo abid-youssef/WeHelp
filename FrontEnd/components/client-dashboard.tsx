@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react"
 import { useApp } from "./app-context"
-import { getTransactionsByUser, getEvents, getGoalsByUser, getLoansByUser, updateLifeEvent, updateCustomEvent } from "@/mocks/store"
-import { generateTwinData } from "@/mocks/forecast"
+import { getTransactionsByUser, getEvents, getGoalsByUser, getLoansByUser, updateLifeEvent, updateCustomEvent } from "@/data/store"
+import { generateTwinData } from "@/data/forecast"
 import { LifeCalendar } from "./life-calendar"
 import { ProjectionChart } from "./projection-chart"
 import { ScenarioSimulator } from "./scenario-simulator"

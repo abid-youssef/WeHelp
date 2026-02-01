@@ -7,13 +7,13 @@ import {
   computeUserDistributions,
   getUserDistributions,
   getGoalsByUser,
-} from "@/mocks/store"
+} from "@/data/store"
 import {
   runEnhancedMonteCarlo,
   computeCalibratedDistributions,
   STRESS_PRESETS,
   type EnhancedMonteCarloConfig,
-} from "@/mocks/forecast"
+} from "@/data/forecast"
 
 // POST /api/simulate
 export async function POST(request: Request) {

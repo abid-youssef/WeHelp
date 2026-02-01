@@ -2,9 +2,9 @@
 
 import { useMemo } from "react"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser, getCustomEventsByUser, getLoansByUser } from "@/mocks/store"
-import type { LifeEvent, CustomEvent } from "@/mocks/seed-data"
-import { generateTwinData } from "@/mocks/forecast"
+import { getEvents, getTransactionsByUser, getCustomEventsByUser, getLoansByUser } from "@/data/store"
+import type { LifeEvent, CustomEvent } from "@/data/seed-data"
+import { generateTwinData } from "@/data/forecast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Moon, Gift, Sun, BookOpen, Sparkles, Star, Heart, GraduationCap, Home, Car, Briefcase, Plane } from "lucide-react"

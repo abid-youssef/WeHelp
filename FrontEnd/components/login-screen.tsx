@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useApp } from "./app-context"
-import { getUsers, getAdvisors } from "@/mocks/store"
+import { getUsers, getAdvisors } from "@/data/store"
 import { Button } from "@/components/ui/button"
 import {
   Card,
