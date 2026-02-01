@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react"
 import { useApp } from "./app-context"
-import { getTransactionsByUser, getEventById, getGoalsByUser } from "@/mocks/store"
-import { calculateReadiness, computeCalibratedDistributions } from "@/mocks/forecast"
+import { getTransactionsByUser, getEventById, getGoalsByUser } from "@/data/store"
+import { calculateReadiness, computeCalibratedDistributions } from "@/data/forecast"
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ import {
   Save,
   Check,
 } from "lucide-react"
-import { updateLifeEvent, updateCustomEvent } from "@/mocks/store"
+import { updateLifeEvent, updateCustomEvent } from "@/data/store"
 import { Input } from "@/components/ui/input"
 
 interface ExplainabilityModalProps {

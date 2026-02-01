@@ -1,7 +1,15 @@
 import { neon } from '@neondatabase/serverless'
 
-// Create a reusable SQL client
-export const sql = neon(process.env.DATABASE_URL!)
+// Create a reusable SQL client with a fallback for build time
+const connectionString = process.env.DATABASE_URL
+export const sql = connectionString
+  ? neon(connectionString)
+  : ((...args: any[]) => {
+    if (typeof window === 'undefined') {
+      console.warn('⚠️ DATABASE_URL is not set. Using mock SQL client.')
+    }
+    return Promise.resolve([])
+  }) as any
 
 // Helper to generate UUIDs
 export function generateId(): string {

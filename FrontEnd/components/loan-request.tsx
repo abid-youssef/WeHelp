@@ -7,14 +7,14 @@ import {
   getActiveLoans,
   createLoanRequest,
   calculateLoanEligibility,
-} from "@/mocks/store"
+} from "@/data/store"
 import {
   LOAN_PURPOSES,
   DEFAULT_LOAN_RATE,
   AUTO_APPROVAL_THRESHOLD,
   calculateMonthlyPayment,
   type Loan,
-} from "@/mocks/seed-data"
+} from "@/data/seed-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

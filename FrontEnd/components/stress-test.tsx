@@ -15,14 +15,14 @@ import {
   Legend,
 } from "recharts"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser, getCustomEventsByUser, getCustomStressTemplates } from "@/mocks/store"
+import { getEvents, getTransactionsByUser, getCustomEventsByUser, getCustomStressTemplates } from "@/data/store"
 import {
   runEnhancedMonteCarlo,
   STRESS_PRESETS,
   type StressScenario,
   type MonteCarloResult,
   type EnhancedMonteCarloConfig,
-} from "@/mocks/forecast"
+} from "@/data/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"

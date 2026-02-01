@@ -1,5 +1,5 @@
-import { sql, generateId, parseNumeric } from '@/mocks/db'
-import type { User, UserType } from '@/mocks/types'
+import { sql, generateId, parseNumeric } from '@/data/db'
+import type { User, UserType } from '@/data/types'
 import { NextResponse } from 'next/server'
 
 function mapRowToUser(row: Record<string, unknown>): User {

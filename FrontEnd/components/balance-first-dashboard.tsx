@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react"
 import { useApp } from "./app-context"
-import { getTransactionsByUser, getEvents, getGoalsByUser, getCustomEventsByUser, getActiveLoans, getLoansByUser, updateLifeEvent, updateCustomEvent } from "@/mocks/store"
-import { generateTwinData } from "@/mocks/forecast"
+import { getTransactionsByUser, getEvents, getGoalsByUser, getCustomEventsByUser, getActiveLoans, getLoansByUser, updateLifeEvent, updateCustomEvent } from "@/data/store"
+import { generateTwinData } from "@/data/forecast"
 import { BalanceProjectionChart } from "./balance-projection-chart"
 import { LifeCalendar } from "./life-calendar"
 import { CustomEvents } from "./custom-events"

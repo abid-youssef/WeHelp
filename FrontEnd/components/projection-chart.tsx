@@ -13,8 +13,8 @@ import {
   Tooltip,
 } from "recharts"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser, getLoansByUser } from "@/mocks/store"
-import { generateProjection } from "@/mocks/forecast"
+import { getEvents, getTransactionsByUser, getLoansByUser } from "@/data/store"
+import { generateProjection } from "@/data/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { TrendingUp } from "lucide-react"
 

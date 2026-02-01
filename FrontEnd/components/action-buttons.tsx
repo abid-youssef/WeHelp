@@ -6,7 +6,7 @@ import {
   createGoal,
   createMicroLoanRequest,
   getEventById,
-} from "@/mocks/store"
+} from "@/data/store"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PiggyBank, Banknote, CheckCircle, AlertCircle } from "lucide-react"
-import { events } from "@/mocks/seed-data"
+import { events } from "@/data/seed-data"
 
 interface ActionButtonsProps {
   selectedEventId?: string
