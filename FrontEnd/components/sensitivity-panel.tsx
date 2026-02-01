@@ -12,8 +12,8 @@ import {
   ReferenceLine,
 } from "recharts"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser } from "@/lib/store"
-import { runSensitivityAnalysis, type SensitivityResult } from "@/lib/forecast"
+import { getEvents, getTransactionsByUser } from "@/mocks/store"
+import { runSensitivityAnalysis, type SensitivityResult } from "@/mocks/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"

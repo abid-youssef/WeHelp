@@ -1,20 +1,20 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useApp } from "./app-context"
 import {
   getLoansByUser,
   getActiveLoans,
   createLoanRequest,
   calculateLoanEligibility,
-} from "@/lib/store"
+} from "@/mocks/store"
 import {
   LOAN_PURPOSES,
   DEFAULT_LOAN_RATE,
   AUTO_APPROVAL_THRESHOLD,
   calculateMonthlyPayment,
   type Loan,
-} from "@/lib/seed-data"
+} from "@/mocks/seed-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,21 +57,33 @@ import {
 
 interface LoanRequestProps {
   onLoanCreated?: () => void
+  trigger?: number
+  eventId?: string
 }
 
-export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
+export function LoanRequest({ onLoanCreated, trigger, eventId }: LoanRequestProps) {
   const { currentUser, refreshKey, triggerRefresh } = useApp()
+
+  // State declarations at the top
   const [isOpen, setIsOpen] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [lastLoan, setLastLoan] = useState<Loan | null>(null)
   const [wasAutoApproved, setWasAutoApproved] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
 
   // Form state
   const [amount, setAmount] = useState(500)
   const [termMonths, setTermMonths] = useState(6)
   const [purpose, setPurpose] = useState("emergency")
   const [interestRate, setInterestRate] = useState(DEFAULT_LOAN_RATE)
-  const [consentChecked, setConsentChecked] = useState(false)
+
+  // Trigger effect
+  useEffect(() => {
+    if (trigger && trigger > 0) {
+      setIsOpen(true)
+      setConsentChecked(true)
+    }
+  }, [trigger])
 
   // Get user's loans
   const userLoans = useMemo(
@@ -106,7 +118,10 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
   if (!currentUser) return null
 
   const handleSubmit = () => {
-    if (!consentChecked) return
+    if (!consentChecked) {
+      alert("Please check the consent box to proceed.")
+      return
+    }
 
     const result = createLoanRequest({
       userId: currentUser.id,
@@ -114,6 +129,7 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
       termMonths,
       annualInterestRate: interestRate,
       purpose,
+      eventId: eventId,
     })
 
     setLastLoan(result.loan)
@@ -209,11 +225,11 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
                       {(loan.status === "approved_auto" ||
                         loan.status === "approved_by_advisor" ||
                         loan.status === "active") && (
-                        <p className="text-xs text-chart-2 mt-1 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {loan.monthlyPayment.toFixed(0)} TND/month
-                        </p>
-                      )}
+                          <p className="text-xs text-chart-2 mt-1 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {loan.monthlyPayment.toFixed(0)} TND/month
+                          </p>
+                        )}
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">
@@ -246,7 +262,6 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
         </CardContent>
       </Card>
 
-      {/* Loan Request Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -261,7 +276,19 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
 
           <div className="space-y-5 py-4">
             {/* Amount Slider */}
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Info Box */}
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex gap-3">
+                <Info className="w-5 h-5 text-primary shrink-0" />
+                <div className="text-xs space-y-1 text-left">
+                  <p className="font-semibold text-primary">Micro-loan Advantage</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Requests under <span className="font-bold text-foreground">{AUTO_APPROVAL_THRESHOLD} TND</span> are typically
+                    <span className="font-semibold text-success"> auto-approved</span> instantly for clients with a high readiness score.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label>Loan Amount</Label>
                 <span className="text-lg font-semibold text-primary">
@@ -362,13 +389,12 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
             {/* Eligibility Hint */}
             {eligibility && (
               <div
-                className={`p-4 rounded-lg border ${
-                  eligibility.canAutoApprove
-                    ? "bg-success/10 border-success/30"
-                    : eligibility.score >= 40
-                      ? "bg-warning/10 border-warning/30"
-                      : "bg-destructive/10 border-destructive/30"
-                }`}
+                className={`p-4 rounded-lg border ${eligibility.canAutoApprove
+                  ? "bg-success/10 border-success/30"
+                  : eligibility.score >= 40
+                    ? "bg-warning/10 border-warning/30"
+                    : "bg-destructive/10 border-destructive/30"
+                  }`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   {eligibility.canAutoApprove ? (
@@ -382,7 +408,7 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
                     Eligibility Score: {eligibility.score}/100
                   </span>
                 </div>
-                
+
                 {eligibility.canAutoApprove ? (
                   <p className="text-xs text-success">
                     This loan qualifies for automatic approval. You will receive instant confirmation.
@@ -416,7 +442,7 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
               <Checkbox
                 id="consent"
                 checked={consentChecked}
-                onCheckedChange={(c) => setConsentChecked(c === true)}
+                onCheckedChange={(checked) => setConsentChecked(checked === true)}
                 className="mt-1"
               />
               <label htmlFor="consent" className="text-sm cursor-pointer">
@@ -431,7 +457,7 @@ export function LoanRequest({ onLoanCreated }: LoanRequestProps) {
             <Button variant="outline" onClick={() => setIsOpen(false)} className="bg-transparent">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={!consentChecked}>
+            <Button onClick={handleSubmit}>
               {eligibility?.canAutoApprove ? "Submit & Approve" : "Submit Request"}
             </Button>
           </DialogFooter>

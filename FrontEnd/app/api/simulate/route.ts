@@ -7,13 +7,13 @@ import {
   computeUserDistributions,
   getUserDistributions,
   getGoalsByUser,
-} from "@/lib/store"
+} from "@/mocks/store"
 import {
   runEnhancedMonteCarlo,
   computeCalibratedDistributions,
   STRESS_PRESETS,
   type EnhancedMonteCarloConfig,
-} from "@/lib/forecast"
+} from "@/mocks/forecast"
 
 // POST /api/simulate
 export async function POST(request: Request) {
@@ -62,18 +62,18 @@ export async function POST(request: Request) {
     const now = new Date()
     const customEventCosts = includeCustomEvents
       ? customEvents.map((e) => {
-          const eventDate = new Date(e.startDate)
-          const monthsAway = Math.max(
-            1,
-            (eventDate.getFullYear() - now.getFullYear()) * 12 +
-              (eventDate.getMonth() - now.getMonth())
-          )
-          return {
-            month: monthsAway <= 6 ? monthsAway : 0,
-            cost: e.estimatedCost,
-            costStd: e.costStd,
-          }
-        }).filter((e) => e.month > 0)
+        const eventDate = new Date(e.startDate)
+        const monthsAway = Math.max(
+          1,
+          (eventDate.getFullYear() - now.getFullYear()) * 12 +
+          (eventDate.getMonth() - now.getMonth())
+        )
+        return {
+          month: monthsAway <= 6 ? monthsAway : 0,
+          cost: e.estimatedCost,
+          costStd: e.costStd,
+        }
+      }).filter((e) => e.month > 0)
       : []
 
     const config: EnhancedMonteCarloConfig = {

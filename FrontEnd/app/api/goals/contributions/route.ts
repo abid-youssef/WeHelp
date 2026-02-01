@@ -1,5 +1,5 @@
-import { sql, generateId, formatDate, parseNumeric } from '@/lib/db'
-import type { GoalContribution, ContributionType } from '@/lib/types'
+import { sql, generateId, formatDate, parseNumeric } from '@/mocks/db'
+import type { GoalContribution, ContributionType } from '@/mocks/types'
 import { NextResponse } from 'next/server'
 
 function mapRowToContribution(row: Record<string, unknown>): GoalContribution {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const id = generateId()
-    
+
     // Insert the contribution
     await sql`
       INSERT INTO goal_contributions (id, goal_id, amount, date, type, notes)

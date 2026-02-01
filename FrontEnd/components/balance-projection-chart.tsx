@@ -14,16 +14,16 @@ import {
   ReferenceArea,
 } from "recharts"
 import { useApp } from "./app-context"
-import { 
-  getEvents, 
-  getTransactionsByUser, 
-  getCustomEventsByUser, 
-  getActiveLoans, 
+import {
+  getEvents,
+  getTransactionsByUser,
+  getCustomEventsByUser,
+  getActiveLoans,
   getFutureLoanPayments,
   calculateMonthlyFlowBreakdown,
   generateMonthExplanation,
   getUserById,
-} from "@/lib/store"
+} from "@/mocks/store"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,7 +44,7 @@ import {
   ChevronRight,
   Lightbulb,
 } from "lucide-react"
-import type { LifeEvent, CustomEvent, Transaction } from "@/lib/seed-data"
+import type { LifeEvent, CustomEvent, Transaction } from "@/mocks/seed-data"
 
 interface MonthlyProjection {
   month: string
@@ -139,7 +139,7 @@ export function BalanceProjectionChart({
   const computeMonthlyOutflows = useCallback(
     (transactions: Transaction[], monthStr: string): OutflowBreakdown[] => {
       const categoryTotals: Record<string, { amount: number; isRecurring: boolean }> = {}
-      
+
       // Get transactions from this month or recurring pattern
       const monthTransactions = transactions.filter((t) => {
         const tMonth = t.date.substring(0, 7)
@@ -180,7 +180,7 @@ export function BalanceProjectionChart({
 
     // Get realistic monthly flow breakdown from store
     const flowBreakdowns = calculateMonthlyFlowBreakdown(currentUser.id, 6)
-    
+
     const now = new Date()
     const monthNames = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -189,12 +189,12 @@ export function BalanceProjectionChart({
 
     const ITERATIONS = 30 // Quick mobile-friendly iteration count
     const projectionData: MonthlyProjection[] = []
-    
+
     // Current month (month 0)
     const currentDate = new Date(now)
     const currentMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`
     const currentLabel = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-    
+
     // Add current month as baseline
     projectionData.push({
       month: currentMonthStr,
@@ -236,10 +236,10 @@ export function BalanceProjectionChart({
       for (let i = 0; i < ITERATIONS; i++) {
         // Sample income with variance based on salary frequency
         const sampledIncome = Math.max(0, randomNormal(breakdown.scheduledIncome, breakdown.incomeVariance))
-        
+
         // Fixed outflows are deterministic
         const fixedOutflows = breakdown.fixedOutflows
-        
+
         // Sample variable outflows with seasonal adjustment
         const sampledVariable = Math.max(
           breakdown.variableOutflowMean * 0.5,
@@ -319,7 +319,7 @@ export function BalanceProjectionChart({
 
   // Top drivers for explainability
   const nextRiskyMonth = projection.find((p) => p.balance < currentUser.balance * 0.5)
-  
+
   if (nextRiskyMonth) {
     nextRiskyMonth.eventContributions.forEach((e) => {
       topDrivers.push(`${e.eventName} estimated cost ${e.mean.toLocaleString()} ± ${e.std.toLocaleString()} TND`)
@@ -336,7 +336,7 @@ export function BalanceProjectionChart({
   }
 
   const handleMonthClick = (data: MonthlyProjection) => {
-    setSelectedMonth(data)
+    handleViewBreakdown(data)
   }
 
   const handleViewBreakdown = (month: MonthlyProjection) => {
@@ -348,12 +348,12 @@ export function BalanceProjectionChart({
   // Custom tooltip with detailed breakdown
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || payload.length === 0) return null
-    
+
     const data = projection.find((p) => p.label === label)
     if (!data) return null
 
     return (
-      <div className="bg-card border border-border rounded-lg p-4 shadow-lg min-w-[280px] max-w-[340px]">
+      <div className="bg-card border border-border rounded-lg p-4 shadow-lg min-w-[280px] max-w-[340px] relative z-[100]">
         <div className="flex items-center justify-between mb-3">
           <p className="font-semibold text-sm">{label}</p>
           {data.seasonalMultiplier > 1.05 && (
@@ -362,7 +362,7 @@ export function BalanceProjectionChart({
             </Badge>
           )}
         </div>
-        
+
         <div className="space-y-2">
           {/* Balance */}
           <div className="flex justify-between items-center">
@@ -373,7 +373,7 @@ export function BalanceProjectionChart({
             <span>Range (10th-90th)</span>
             <span>{data.p10.toLocaleString()} - {data.p90.toLocaleString()} TND</span>
           </div>
-          
+
           {/* Inflows */}
           <div className="border-t pt-2 mt-2">
             <p className="text-xs font-medium text-muted-foreground mb-1">Income</p>
@@ -382,7 +382,7 @@ export function BalanceProjectionChart({
               <span className="text-sm text-emerald-600">+{data.inflows.toLocaleString()} TND</span>
             </div>
           </div>
-          
+
           {/* Outflows Breakdown */}
           <div className="border-t pt-2 mt-2">
             <p className="text-xs font-medium text-muted-foreground mb-1">Outflows Breakdown</p>
@@ -413,7 +413,7 @@ export function BalanceProjectionChart({
               </div>
             </div>
           </div>
-          
+
           {/* Event Details */}
           {data.eventContributions.length > 0 && (
             <div className="border-t pt-2 mt-2">
@@ -429,7 +429,7 @@ export function BalanceProjectionChart({
               ))}
             </div>
           )}
-          
+
           {/* Loan Details */}
           {data.loanPaymentContributions.length > 0 && (
             <div className="border-t pt-2 mt-2">
@@ -445,7 +445,7 @@ export function BalanceProjectionChart({
               ))}
             </div>
           )}
-          
+
           {/* Readiness & Confidence */}
           <div className="border-t pt-2 mt-2 flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -458,7 +458,7 @@ export function BalanceProjectionChart({
               {data.explanation?.confidence || "medium"} confidence
             </Badge>
           </div>
-          
+
           {/* Explanation */}
           {data.explanation?.text && (
             <div className="border-t pt-2 mt-2">
@@ -469,15 +469,11 @@ export function BalanceProjectionChart({
             </div>
           )}
         </div>
-        
-        <Button
-          size="sm"
-          variant="ghost"
-          className="w-full mt-3 text-xs bg-transparent"
-          onClick={() => handleViewBreakdown(data)}
-        >
-          View Full Breakdown <ChevronRight className="w-3 h-3 ml-1" />
-        </Button>
+
+        <div className="mt-3 py-2 border-t border-dashed flex items-center justify-center gap-2 text-xs text-primary font-medium">
+          <Info className="w-3 h-3" />
+          Click chart for full breakdown
+        </div>
       </div>
     )
   }
@@ -507,7 +503,7 @@ export function BalanceProjectionChart({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Savings Slider */}
         <div className="p-4 rounded-lg bg-muted/30 border">
@@ -546,9 +542,9 @@ export function BalanceProjectionChart({
                   <stop offset="95%" stopColor={outflowColor} stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              
+
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              
+
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 11, fill: "#64748b" }}
@@ -572,9 +568,12 @@ export function BalanceProjectionChart({
                 tickFormatter={(v) => `${(v / 1000).toFixed(1)}k`}
                 domain={[0, 'dataMax + 200']}
               />
-              
-              <Tooltip content={<CustomTooltip />} />
-              
+
+              <Tooltip
+                content={<CustomTooltip />}
+                wrapperStyle={{ zIndex: 100 }}
+              />
+
               {/* Confidence band (p10-p90) */}
               <Area
                 yAxisId="balance"
@@ -592,7 +591,7 @@ export function BalanceProjectionChart({
                 fill="#fff"
                 fillOpacity={1}
               />
-              
+
               {/* Outflows area (optional) */}
               <Area
                 yAxisId="outflows"
@@ -602,8 +601,9 @@ export function BalanceProjectionChart({
                 strokeWidth={1}
                 fill="url(#outflowGradient)"
                 name="Monthly Outflows"
+                activeDot={false}
               />
-              
+
               {/* Balance line (median) */}
               <Line
                 yAxisId="balance"
@@ -626,7 +626,7 @@ export function BalanceProjectionChart({
                 }}
                 name="Projected Balance"
               />
-              
+
               {/* Zero line reference */}
               <ReferenceLine yAxisId="balance" y={0} stroke="#ef4444" strokeDasharray="5 5" />
             </ComposedChart>
@@ -653,6 +653,24 @@ export function BalanceProjectionChart({
               <span>Event Month</span>
             </div>
           )}
+        </div>
+
+        {/* Feature Explanation & Tooltips */}
+        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-primary">Understanding your Forecast</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-muted-foreground">
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Realistic Variability</p>
+              <p>We use historical spending habits and seasonal trends (like Ramadan or Summer) to simulate potential future balances.</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Confidence Bands</p>
+              <p>The shaded area represents the 10th-90th percentile range. Your balance is 80% likely to fall within this area.</p>
+            </div>
+          </div>
         </div>
 
         {/* Top Drivers / Explainability */}

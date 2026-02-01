@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react"
 import { useApp } from "./app-context"
-import { getTransactionsByUser, getEventById, getGoalsByUser } from "@/lib/store"
-import { calculateReadiness, computeCalibratedDistributions } from "@/lib/forecast"
+import { getTransactionsByUser, getEventById, getGoalsByUser } from "@/mocks/store"
+import { calculateReadiness, computeCalibratedDistributions } from "@/mocks/forecast"
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,12 @@ import {
   Code,
   ChevronDown,
   AlertTriangle,
+  Edit2,
+  Save,
+  Check,
 } from "lucide-react"
+import { updateLifeEvent, updateCustomEvent } from "@/mocks/store"
+import { Input } from "@/components/ui/input"
 
 interface ExplainabilityModalProps {
   isOpen: boolean
@@ -41,8 +46,11 @@ export function ExplainabilityModal({
   onClose,
   selectedEventId,
 }: ExplainabilityModalProps) {
-  const { currentUser, refreshKey } = useApp()
+  const { currentUser, refreshKey, triggerRefresh } = useApp()
   const [showMath, setShowMath] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editCost, setEditCost] = useState("")
+  const [editStd, setEditStd] = useState("")
 
   const data = useMemo(() => {
     if (!currentUser || !selectedEventId) return null
@@ -65,6 +73,27 @@ export function ExplainabilityModal({
 
   const { event, readiness, calibrated, linkedGoal } = data
 
+  const handleStartEdit = () => {
+    setEditCost(event.estimatedCost.toString())
+    setEditStd(event.costStd.toString())
+    setIsEditing(true)
+  }
+
+  const handleSaveEdit = () => {
+    const cost = parseInt(editCost)
+    const std = parseInt(editStd)
+    if (isNaN(cost) || isNaN(std)) return
+
+    if (event.id.startsWith("custom_")) {
+      updateCustomEvent(event.id, { estimatedCost: cost, costStd: std })
+    } else {
+      updateLifeEvent(event.id, { estimatedCost: cost, costStd: std })
+    }
+
+    setIsEditing(false)
+    triggerRefresh()
+  }
+
   const getImpactIcon = (impact: string) => {
     switch (impact) {
       case "positive":
@@ -86,7 +115,7 @@ export function ExplainabilityModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -106,8 +135,37 @@ export function ExplainabilityModal({
               <p className="text-2xl font-bold">{readiness.score}%</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-muted-foreground">Confidence</p>
-              <Badge variant={confidence.variant}>{confidence.label}</Badge>
+              <p className="text-sm text-muted-foreground">Estimated Cost</p>
+              {!isEditing ? (
+                <div className="flex items-center gap-2 justify-end">
+                  <span className="font-semibold">{event.estimatedCost.toLocaleString()} TND</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleStartEdit}>
+                    <Edit2 className="w-3 h-3 text-muted-foreground" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1">
+                    <Input
+                      className="h-7 w-20 text-right px-1"
+                      value={editCost}
+                      onChange={(e) => setEditCost(e.target.value)}
+                    />
+                    <span className="text-xs">TND</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-muted-foreground">±</span>
+                    <Input
+                      className="h-7 w-16 text-right px-1"
+                      value={editStd}
+                      onChange={(e) => setEditStd(e.target.value)}
+                    />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={handleSaveEdit}>
+                      <Check className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -207,7 +265,7 @@ export function ExplainabilityModal({
               <div className="p-4 rounded-lg bg-muted/50 font-mono text-xs space-y-3">
                 <p className="text-muted-foreground">// Scoring Formula</p>
                 <pre className="whitespace-pre-wrap text-foreground">
-{`Score = 
+                  {`Score = 
   (norm_savings_rate × 30) +
   (norm_expense_stability × 20) +
   (norm_months_buffer × 25) +
@@ -275,7 +333,7 @@ where:
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              These distributions are computed from your transaction history and used 
+              These distributions are computed from your transaction history and used
               for Monte Carlo simulations to provide personalized forecasts.
             </p>
           </div>
@@ -288,7 +346,7 @@ where:
                 <div className="text-sm">
                   <p className="font-medium">Linked Goal: {linkedGoal.name}</p>
                   <p className="text-muted-foreground mt-1">
-                    Progress: {linkedGoal.currentAmount.toLocaleString()} / {linkedGoal.targetAmount.toLocaleString()} TND 
+                    Progress: {linkedGoal.currentAmount.toLocaleString()} / {linkedGoal.targetAmount.toLocaleString()} TND
                     ({Math.round((linkedGoal.currentAmount / linkedGoal.targetAmount) * 100)}%)
                   </p>
                 </div>

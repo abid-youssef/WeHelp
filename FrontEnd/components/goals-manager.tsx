@@ -9,8 +9,8 @@ import {
   deleteGoal,
   getEvents,
   getCustomEventsByUser,
-} from "@/lib/store"
-import type { Goal, LifeEvent, CustomEvent } from "@/lib/seed-data"
+} from "@/mocks/store"
+import type { Goal, LifeEvent, CustomEvent } from "@/mocks/seed-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

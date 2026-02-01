@@ -1032,3 +1032,142 @@ async def get_demo_forecast(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# ============================================================================
+# NEW READINESS & STRESS TEST ENDPOINTS
+# ============================================================================
+
+class SafetyCheckRequest(BaseModel):
+    event_cost: float = 0.0
+
+class StressTestRequest(BaseModel):
+    scenario: str = "job_loss_3m"
+    horizon_months: int = 12
+    n_sim: int = 30 # Default for quick client demo
+
+class AdvisorDecisionRequest(BaseModel):
+    action: str
+    comment: str
+    advisor_id: str
+
+@app.post("/api/v1/readiness")
+async def get_readiness_score(request: SafetyCheckRequest, user_id: str = "demo_user"):
+    result = calculate_readiness_score_logic(user_id, request.event_cost)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@app.post("/api/v1/stresstest")
+async def run_stress_test_endpoint(request: StressTestRequest, user_id: str = "demo_user"):
+    result = run_stress_test_logic(
+        user_id, 
+        request.scenario, 
+        request.horizon_months, 
+        request.n_sim
+    )
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+# ============================================================================
+# ADVISOR ENDPOINTS
+# ============================================================================
+
+@app.get("/api/v1/advisor/clients")
+async def get_advisor_clients(sort: str = "risk"):
+    conn = get_db_connection()
+    clients = conn.execute("SELECT * FROM clients").fetchall()
+    
+    client_list = []
+    for client in clients:
+        # Quick metrics for list view
+        try:
+            readiness = calculate_readiness_score_logic(client['id'])
+            # Extract just stats for classification
+            metrics = {
+                'months_of_buffer': readiness['metrics']['months_of_buffer'],
+                'savings_rate': readiness['metrics']['savings_rate']
+            }
+            category = classify_client_logic(metrics)
+            
+            client_list.append({
+                "id": client['id'],
+                "name": client['name'],
+                "category": category,
+                "readiness_score": readiness['score'],
+                "monthly_income": client['monthly_income'],
+                "balance": client['current_balance']
+            })
+        except Exception as e:
+            logger.error(f"Error processing client {client['id']}: {e}")
+            continue
+            
+    conn.close()
+    
+    # Sorting
+    if sort == "readiness":
+        client_list.sort(key=lambda x: x['readiness_score'])
+    else:
+        # Default risk sort (lower readiness = higher risk)
+        client_list.sort(key=lambda x: x['readiness_score'])
+        
+    return client_list
+
+@app.get("/api/v1/advisor/client/{user_id}/dossier")
+async def get_client_dossier(user_id: str):
+    # Full data for analysis
+    readiness = calculate_readiness_score_logic(user_id)
+    if "error" in readiness:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    metrics = {
+        'months_of_buffer': readiness['metrics']['months_of_buffer'],
+        'savings_rate': readiness['metrics']['savings_rate']
+    }
+    category = classify_client_logic(metrics)
+    
+    # Quick default stress test
+    stress_test = run_stress_test_logic(user_id, "job_loss_3m", horizon_months=12, n_sim=50)
+    
+    conn = get_db_connection()
+    loan_requests = conn.execute(
+        "SELECT * FROM loan_requests WHERE user_id = ?", (user_id,)
+    ).fetchall()
+    audit_logs = conn.execute(
+        "SELECT * FROM audit_logs WHERE user_id = ? ORDER BY timestamp DESC LIMIT 5", (user_id,)
+    ).fetchall()
+    conn.close()
+    
+    return {
+        "profile": {
+            "id": user_id,
+            "category": category,
+            "readiness": readiness
+        },
+        "stress_test_summary": stress_test,
+        "loan_requests": [dict(r) for r in loan_requests],
+        "audit_trail": [dict(l) for l in audit_logs]
+    }
+
+@app.post("/api/v1/advisor/requests/{request_id}/decision")
+async def advisor_decision(request_id: int, decision: AdvisorDecisionRequest):
+    conn = get_db_connection()
+    
+    # Update Request
+    conn.execute(
+        "UPDATE loan_requests SET status = ?, advisor_decision = ?, advisor_comment = ? WHERE id = ?",
+        (decision.action, decision.action, decision.comment, request_id)
+    )
+    
+    # Log Audit
+    # Iterate to find user_id for this request (simplified)
+    req = conn.execute("SELECT user_id FROM loan_requests WHERE id = ?", (request_id,)).fetchone()
+    if req:
+        conn.execute(
+            "INSERT INTO audit_logs (user_id, actor_id, action, payload, timestamp) VALUES (?, ?, ?, ?, ?)",
+            (req['user_id'], decision.advisor_id, f"Loan {decision.action}", decision.comment, datetime.now().isoformat())
+        )
+    
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
