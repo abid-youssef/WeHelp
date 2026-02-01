@@ -24,7 +24,7 @@ uv pip install -r requirements.txt
 python demo.py
 
 # Start API server
-python -m uvicorn app.simple_main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 ## API Endpoints
@@ -103,7 +103,7 @@ The API accounts for major Tunisian financial events:
 ## Running Tests
 
 ```bash
-python -m pytest tests/test_simple.py -v
+python -m pytest tests/test_api.py -v
 ```
 
 ## Project Structure
@@ -111,9 +111,9 @@ python -m pytest tests/test_simple.py -v
 ```
 financial_twin_api/
 ├── app/
-│   └── simple_main.py    # Simplified API (single file)
+│   └── main.py           # Consolidated API (Digital Twin + Advisor logic)
 ├── tests/
-│   └── test_simple.py    # Unit & API tests
+│   └── test_api.py       # Unit & API tests
 ├── demo.py               # Demo script
 ├── requirements.txt      # Dependencies
 └── README.md

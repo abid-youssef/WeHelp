@@ -21,7 +21,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Run API
-python -m uvicorn app.simple_main:app --reload
+python -m uvicorn app.main:app --reload
 
 # Run tests
 python -m pytest tests/ -v

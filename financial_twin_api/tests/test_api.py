@@ -4,7 +4,7 @@ Tests for Financial Digital Twin API
 import pytest
 from fastapi.testclient import TestClient
 
-from app.simple_main import (
+from app.main import (
     app,
     create_digital_twin,
     forecast_cash_flow,

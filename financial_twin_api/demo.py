@@ -8,7 +8,7 @@ import asyncio
 from datetime import datetime
 
 # Import the app directly for testing
-from app.simple_main import (
+from app.main import (
     create_digital_twin,
     forecast_cash_flow,
     simulate_scenario,
