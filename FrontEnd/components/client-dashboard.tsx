@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react"
 import { useApp } from "./app-context"
-import { getTransactionsByUser, getEvents, getGoalsByUser } from "@/lib/store"
-import { generateTwinData } from "@/lib/forecast"
+import { getTransactionsByUser, getEvents, getGoalsByUser, getLoansByUser, updateLifeEvent, updateCustomEvent } from "@/mocks/store"
+import { generateTwinData } from "@/mocks/forecast"
 import { LifeCalendar } from "./life-calendar"
 import { ProjectionChart } from "./projection-chart"
 import { ScenarioSimulator } from "./scenario-simulator"
@@ -46,7 +46,8 @@ export function ClientDashboard() {
   const twinData = useMemo(() => {
     if (!currentUser) return null
     const transactions = getTransactionsByUser(currentUser.id)
-    return generateTwinData(currentUser, transactions, events, monthlySavings)
+    const loans = getLoansByUser(currentUser.id)
+    return generateTwinData(currentUser, transactions, events, loans, monthlySavings)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, monthlySavings, refreshKey])
 
@@ -95,35 +96,32 @@ export function ClientDashboard() {
         {/* Next Event Alert */}
         {twinData.eventReadiness.length > 0 && (
           <Card
-            className={`border-2 ${
-              twinData.eventReadiness[0].status === "on_track"
-                ? "border-success/30 bg-success/5"
-                : twinData.eventReadiness[0].status === "at_risk"
-                  ? "border-warning/30 bg-warning/5"
-                  : "border-destructive/30 bg-destructive/5"
-            }`}
+            className={`border-2 ${twinData.eventReadiness[0].status === "on_track"
+              ? "border-success/30 bg-success/5"
+              : twinData.eventReadiness[0].status === "at_risk"
+                ? "border-warning/30 bg-warning/5"
+                : "border-destructive/30 bg-destructive/5"
+              }`}
           >
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      twinData.eventReadiness[0].status === "on_track"
-                        ? "bg-success/20"
-                        : twinData.eventReadiness[0].status === "at_risk"
-                          ? "bg-warning/20"
-                          : "bg-destructive/20"
-                    }`}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${twinData.eventReadiness[0].status === "on_track"
+                      ? "bg-success/20"
+                      : twinData.eventReadiness[0].status === "at_risk"
+                        ? "bg-warning/20"
+                        : "bg-destructive/20"
+                      }`}
                   >
                     {twinData.eventReadiness[0].status === "on_track" ? (
                       <CheckCircle className="w-5 h-5 text-success" />
                     ) : (
                       <AlertCircle
-                        className={`w-5 h-5 ${
-                          twinData.eventReadiness[0].status === "at_risk"
-                            ? "text-warning"
-                            : "text-destructive"
-                        }`}
+                        className={`w-5 h-5 ${twinData.eventReadiness[0].status === "at_risk"
+                          ? "text-warning"
+                          : "text-destructive"
+                          }`}
                       />
                     )}
                   </div>
@@ -193,22 +191,20 @@ export function ClientDashboard() {
             <CardContent className="pt-4">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    twinData.insights.monthsOfSavings >= 3
-                      ? "bg-success/10"
-                      : twinData.insights.monthsOfSavings >= 1
-                        ? "bg-warning/10"
-                        : "bg-destructive/10"
-                  }`}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${twinData.insights.monthsOfSavings >= 3
+                    ? "bg-success/10"
+                    : twinData.insights.monthsOfSavings >= 1
+                      ? "bg-warning/10"
+                      : "bg-destructive/10"
+                    }`}
                 >
                   <PiggyBank
-                    className={`w-5 h-5 ${
-                      twinData.insights.monthsOfSavings >= 3
-                        ? "text-success"
-                        : twinData.insights.monthsOfSavings >= 1
-                          ? "text-warning"
-                          : "text-destructive"
-                    }`}
+                    className={`w-5 h-5 ${twinData.insights.monthsOfSavings >= 3
+                      ? "text-success"
+                      : twinData.insights.monthsOfSavings >= 1
+                        ? "text-warning"
+                        : "text-destructive"
+                      }`}
                   />
                 </div>
                 <div>
@@ -273,7 +269,18 @@ export function ClientDashboard() {
                   />
                   <ReadinessScore
                     selectedEventId={selectedEventId}
-                    onExplainClick={() => setExplainModalOpen(true)}
+                    onExplainClick={(id) => {
+                      setSelectedEventId(id)
+                      setExplainModalOpen(true)
+                    }}
+                    onAdvisorClick={(id) => {
+                      if (id.startsWith("custom_")) {
+                        updateCustomEvent(id, { consultationRequested: true })
+                      } else {
+                        updateLifeEvent(id, { consultationRequested: true })
+                      }
+                      triggerRefresh()
+                    }}
                   />
                 </div>
               </div>

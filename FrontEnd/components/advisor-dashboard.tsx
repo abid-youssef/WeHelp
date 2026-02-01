@@ -16,10 +16,12 @@ import {
   approveLoan,
   rejectLoan,
   type AdvisorAction,
-} from "@/lib/store"
-import { LOAN_PURPOSES } from "@/lib/seed-data"
-import { events } from "@/lib/seed-data"
-import { generateTwinData } from "@/lib/forecast"
+  getLoansByUser,
+  type Loan,
+} from "@/mocks/store"
+import { LOAN_PURPOSES } from "@/mocks/seed-data"
+import { events } from "@/mocks/seed-data"
+import { generateTwinData, classifyClient, calculateLoanRiskScore } from "@/mocks/forecast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +36,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import {
   Shield,
   Users,
   AlertTriangle,
@@ -46,7 +54,23 @@ import {
   FileText,
   TrendingUp,
   TrendingDown,
+  Minus,
+  History as HistoryIcon,
 } from "lucide-react"
+import {
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts"
 
 export function AdvisorDashboard() {
   const { currentAdvisor, setCurrentAdvisor, setIsAdvisorMode, refreshKey, triggerRefresh } = useApp()
@@ -335,45 +359,60 @@ export function AdvisorDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {pendingActions.map((action) => (
-                  <div
-                    key={action.id}
-                    className="p-4 rounded-lg border border-sidebar-border bg-sidebar hover:border-sidebar-primary/50 cursor-pointer transition-colors"
-                    onClick={() => handleOpenAction(action)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center">
-                          {action.type === "goal" ? (
-                            <PiggyBank className="w-5 h-5 text-sidebar-primary" />
-                          ) : (
-                            <Banknote className="w-5 h-5 text-sidebar-primary" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sidebar-foreground">
-                            {action.userName}
-                          </p>
-                          <p className="text-sm text-sidebar-foreground/70">
-                            {action.type === "goal" ? "Savings Goal" : "Micro-Loan"} -{" "}
-                            {action.amount.toLocaleString()} TND
-                          </p>
-                          {action.eventName && (
-                            <p className="text-xs text-sidebar-foreground/50 mt-1">
-                              For: {action.eventName}
+                {pendingActions.map((action) => {
+                  const user = getUserById(action.userId)
+                  const txs = user ? getTransactionsByUser(user.id) : []
+                  const userLoans = user ? getLoansByUser(user.id) : []
+                  const twin = user ? generateTwinData(user, txs, events, userLoans, 0) : null
+                  const category = twin ? classifyClient(twin.insights.monthsOfSavings, twin.insights.savingsRate / 100) : null
+
+                  return (
+                    <div
+                      key={action.id}
+                      className="p-4 rounded-lg border border-sidebar-border bg-sidebar hover:border-sidebar-primary/50 cursor-pointer transition-colors"
+                      onClick={() => handleOpenAction(action)}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-sidebar-accent flex items-center justify-center">
+                            {action.type === "goal" ? (
+                              <PiggyBank className="w-5 h-5 text-sidebar-primary" />
+                            ) : (
+                              <Banknote className="w-5 h-5 text-sidebar-primary" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sidebar-foreground">
+                                {action.userName}
+                              </p>
+                              {category && (
+                                <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal" style={{ color: category.color, borderColor: category.color }}>
+                                  {category.category}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-sidebar-foreground/70">
+                              {action.type === "goal" ? "Savings Goal" : "Micro-Loan"} -{" "}
+                              {action.amount.toLocaleString()} TND
                             </p>
-                          )}
+                            {action.eventName && (
+                              <p className="text-xs text-sidebar-foreground/50 mt-1">
+                                For: {action.eventName}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        {getRiskBadge(action.riskLevel)}
-                        <p className="text-xs text-sidebar-foreground/50 mt-2">
-                          {new Date(action.createdAt).toLocaleDateString()}
-                        </p>
+                        <div className="text-right">
+                          {getRiskBadge(action.riskLevel)}
+                          <p className="text-xs text-sidebar-foreground/50 mt-2">
+                            {new Date(action.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
@@ -525,17 +564,26 @@ function ClientDossierModal({
   onReject: () => void
   onModify: () => void
 }) {
+  const user = action ? getUserById(action.userId) : null
+  const transactions = useMemo(() => action ? getTransactionsByUser(action.userId) : [], [action])
+
   const twinData = useMemo(() => {
-    if (!action) return null
-    const user = getUserById(action.userId)
-    if (!user) return null
-    const transactions = getTransactionsByUser(action.userId)
-    return generateTwinData(user, transactions, events, 0)
-  }, [action])
+    if (!action || !user) return null
+    const loans = getLoansByUser(user.id)
+    return generateTwinData(user, transactions, events, loans, 0)
+  }, [action, user, transactions])
 
-  if (!action) return null
+  const classification = useMemo(() => {
+    if (!twinData) return null
+    return classifyClient(twinData.insights.monthsOfSavings, twinData.insights.savingsRate / 100)
+  }, [twinData])
 
-  const user = getUserById(action.userId)
+  const loanRisk = useMemo(() => {
+    if (!action || !user) return null
+    return calculateLoanRiskScore(user, transactions, action.amount)
+  }, [action, user, transactions, twinData])
+
+  if (!action || !user || !classification) return null
 
   return (
     <Dialog open={!!action} onOpenChange={onClose}>
@@ -543,131 +591,221 @@ function ClientDossierModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
-            Client Dossier
+            Client Dossier & Risk Assessment
           </DialogTitle>
           <DialogDescription>
-            Review {user?.name}&apos;s financial profile and request
+            Review {user.name}&apos;s profile for {action.type === "goal" ? "savings goal" : "loan request"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-          {/* Client Info */}
-          <div className="p-4 rounded-lg bg-muted/50">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Client</p>
-                <p className="font-medium">{user?.name}</p>
+        <div className="space-y-6 py-4 max-h-[80vh] overflow-y-auto pr-2">
+          {/* 1. Client Profile & Classification */}
+          <div className="flex items-center gap-4 p-4 rounded-xl border bg-card">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-md`}
+              style={{ backgroundColor: classification.color }}>
+              {user.name.charAt(0)}
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-lg">{user.name}</h4>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline" className="font-normal" style={{ color: classification.color, borderColor: classification.color }}>
+                  {classification.category}
+                </Badge>
+                <span>•</span>
+                <span>{user.monthlyIncome.toLocaleString()} TND/mo</span>
+                <span>•</span>
+                <span>{user.balance.toLocaleString()} TND Balance</span>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Type</p>
-                <p className="font-medium capitalize">{user?.type}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Balance</p>
-                <p className="font-medium">{user?.balance.toLocaleString()} TND</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Monthly Income</p>
-                <p className="font-medium">
-                  {user?.monthlyIncome.toLocaleString()} TND
-                </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-muted-foreground">Readiness</div>
+              <div className={`text-2xl font-bold ${twinData!.readiness.score >= 70 ? "text-success" : twinData!.readiness.score >= 40 ? "text-warning" : "text-destructive"}`}>
+                {twinData!.readiness.score}/100
               </div>
             </div>
           </div>
 
-          {/* Request Details */}
-          <div className="p-4 rounded-lg border">
-            <h4 className="font-medium mb-3">Request Details</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Type</p>
-                <p className="font-medium">
-                  {action.type === "goal" ? "Savings Goal" : "Micro-Loan"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Amount</p>
-                <p className="font-medium">{action.amount.toLocaleString()} TND</p>
-              </div>
-              {action.eventName && (
-                <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground">Related Event</p>
-                  <p className="font-medium">{action.eventName}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 2. Loan Risk Score (New) */}
+            {loanRisk && (
+              <div className="space-y-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-primary" />
+                  Risk Assessment
+                </h4>
+                <div className={`p-4 rounded-lg border-2 ${loanRisk.level === "low" ? "border-success/20 bg-success/5" : loanRisk.level === "medium" ? "border-warning/20 bg-warning/5" : "border-destructive/20 bg-destructive/5"}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="font-semibold text-lg">{loanRisk.recommendation}</p>
+                      <p className="text-sm opacity-80">Risk Score: {loanRisk.score}/100</p>
+                    </div>
+                    <Badge className={`text-[10px] h-6 px-1.5 ${loanRisk.level === "low" ? "bg-success" : loanRisk.level === "medium" ? "bg-warning" : "bg-destructive"}`}>
+                      {loanRisk.level.toUpperCase()} RISK
+                    </Badge>
+                  </div>
+
+                  {/* Risk Gauge (Visual) */}
+                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden mb-6">
+                    <div
+                      className={`h-full transition-all duration-1000 ${loanRisk.level === "low" ? "bg-success" :
+                        loanRisk.level === "medium" ? "bg-warning" : "bg-destructive"
+                        }`}
+                      style={{ width: `${loanRisk.score}%` }}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    {loanRisk.drivers.map(driver => (
+                      <div key={driver.name} className="flex items-center gap-2 text-xs">
+                        {driver.impact === "positive" ? (
+                          <CheckCircle className="w-3 h-3 text-success" />
+                        ) : (
+                          <AlertTriangle className="w-3 h-3 text-destructive" />
+                        )}
+                        <span className="flex-1 opacity-80">{driver.name}</span>
+                        <span className={`font-medium ${driver.impact === "positive" ? "text-success" : "text-destructive"}`}>
+                          {driver.impact === "positive" ? "+" : "-"}{Math.round(driver.contribution)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-              <div className="col-span-2">
-                <p className="text-sm text-muted-foreground">Description</p>
-                <p className="font-medium">{action.description}</p>
+              </div>
+            )}
+
+            {/* 2b. Readiness Radar (New) */}
+            <div className="space-y-3">
+              <h4 className="font-medium flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                Readiness Profile
+              </h4>
+              <div className="p-2 border rounded-lg bg-card h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={twinData!.readiness.breakdown}>
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      tick={{ fill: '#64748b', fontSize: 10 }}
+                    />
+                    <Radar
+                      name="Score"
+                      dataKey="score"
+                      stroke="#0ea5e9"
+                      fill="#0ea5e9"
+                      fillOpacity={0.5}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
 
-          {/* Twin Snapshot */}
+          {/* 3. Detailed Readiness Breakdown */}
           {twinData && (
-            <div className="p-4 rounded-lg border">
-              <h4 className="font-medium mb-3">Financial Health Snapshot</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Savings Rate</p>
-                  <p className="font-medium flex items-center gap-1">
-                    {twinData.insights.savingsRate}%
-                    {twinData.insights.savingsRate > 10 ? (
-                      <TrendingUp className="w-4 h-4 text-success" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-destructive" />
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Expense Volatility</p>
-                  <p className="font-medium">{twinData.insights.expenseVolatility}%</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Months of Savings</p>
-                  <p className="font-medium">{twinData.insights.monthsOfSavings}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Readiness Score</p>
-                  <p className="font-medium">{twinData.readiness.score}%</p>
-                </div>
+            <div className="space-y-3 pt-6 border-t">
+              <h4 className="font-medium flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-primary" />
+                Key Drivers Impact
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {twinData.readiness.drivers.map((driver) => (
+                  <div key={driver.name} className="p-3 rounded-lg bg-muted/50 border flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{driver.name}</span>
+                      {driver.impact === "positive" ? <TrendingUp className="w-3 h-3 text-success" /> : driver.impact === "negative" ? <TrendingDown className="w-3 h-3 text-destructive" /> : <Minus className="w-3 h-3" />}
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-bold">{driver.value}</span>
+                      <span className="text-xs text-muted-foreground">{driver.description.split(' (')[0]}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* AI Suggestion */}
-          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">AI Suggestion</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {action.riskLevel === "high"
-                    ? "This request exceeds recommended thresholds. Consider modifying the amount or requesting additional documentation."
-                    : action.riskLevel === "medium"
-                      ? "This request is within acceptable limits but warrants review. Client has moderate financial stability."
-                      : "This request appears low-risk based on the client's financial profile. Standard approval recommended."}
+          {/* 4. Request Details & 5. Audit Trail in Tabs */}
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="details">Request Details</TabsTrigger>
+              <TabsTrigger value="history">History & Audit</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="details">
+              <div className="p-4 rounded-lg bg-muted/30 border">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-sm font-medium">Request Summary</h4>
+                  <Badge variant="secondary" className="font-mono">
+                    {action.amount.toLocaleString()} TND
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground italic leading-relaxed">
+                  &quot;{action.description || 'No description provided'}&quot;
                 </p>
-                <Badge className="mt-2" variant="secondary">
-                  Confidence: {action.riskLevel === "low" ? "High" : action.riskLevel === "medium" ? "Medium" : "Low"}
-                </Badge>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+
+            <TabsContent value="history">
+              <div className="space-y-3">
+                <h4 className="font-medium flex items-center gap-2 text-sm">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Audit Trail & Decision History
+                </h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-muted text-muted-foreground uppercase">
+                      <tr>
+                        <th className="px-3 py-2 font-medium">Date</th>
+                        <th className="px-3 py-2 font-medium">Action</th>
+                        <th className="px-3 py-2 font-medium">Advisor</th>
+                        <th className="px-3 py-2 font-medium">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {getAuditLogs().filter(log => log.userId === user.id).length > 0 ? (
+                        getAuditLogs()
+                          .filter(log => log.userId === user.id)
+                          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                          .map(log => (
+                            <tr key={log.id} className="hover:bg-muted/30">
+                              <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                                {new Date(log.timestamp).toLocaleDateString()}
+                              </td>
+                              <td className="px-3 py-2">
+                                <Badge variant="outline" className={`h-5 text-[10px] ${log.action.includes('approved') ? 'text-success border-success/20 bg-success/5' :
+                                  log.action.includes('rejected') ? 'text-destructive border-destructive/20 bg-destructive/5' : ''
+                                  }`}>
+                                  {log.action.replace('_', ' ')}
+                                </Badge>
+                              </td>
+                              <td className="px-3 py-2 font-medium">{log.advisorId}</td>
+                              <td className="px-3 py-2 text-muted-foreground truncate max-w-[150px]" title={log.comment}>
+                                {log.comment}
+                              </td>
+                            </tr>
+                          ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground italic">
+                            No previous audit history found for this client.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Close
+          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button variant="outline" onClick={onModify}>Modify Conditions</Button>
+          <Button variant="destructive" onClick={onReject}>Reject</Button>
+          <Button onClick={onApprove} className="bg-primary hover:bg-primary/90">
+            {loanRisk?.recommendation === "Reject" ? "Override & Approve" : "Approve"}
           </Button>
-          <Button variant="outline" onClick={onModify}>
-            Modify
-          </Button>
-          <Button variant="destructive" onClick={onReject}>
-            Reject
-          </Button>
-          <Button onClick={onApprove}>Approve</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

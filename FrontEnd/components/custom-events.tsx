@@ -8,8 +8,8 @@ import {
   updateCustomEvent,
   deleteCustomEvent,
   getGoalsByUser,
-} from "@/lib/store"
-import type { CustomEvent, Goal } from "@/lib/seed-data"
+} from "@/mocks/store"
+import type { CustomEvent, Goal } from "@/mocks/seed-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -180,7 +180,7 @@ export function CustomEvents() {
     return Math.max(
       0,
       (eventDate.getFullYear() - now.getFullYear()) * 12 +
-        (eventDate.getMonth() - now.getMonth())
+      (eventDate.getMonth() - now.getMonth())
     )
   }
 

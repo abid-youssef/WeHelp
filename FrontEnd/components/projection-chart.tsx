@@ -13,8 +13,8 @@ import {
   Tooltip,
 } from "recharts"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser } from "@/lib/store"
-import { generateProjection } from "@/lib/forecast"
+import { getEvents, getTransactionsByUser, getLoansByUser } from "@/mocks/store"
+import { generateProjection } from "@/mocks/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { TrendingUp } from "lucide-react"
 
@@ -28,14 +28,14 @@ interface TooltipPayload {
   color: string
 }
 
-function CustomTooltip({ 
-  active, 
-  payload, 
-  label 
-}: { 
+function CustomTooltip({
+  active,
+  payload,
+  label
+}: {
   active?: boolean
   payload?: TooltipPayload[]
-  label?: string 
+  label?: string
 }) {
   if (!active || !payload || payload.length === 0) return null
 
@@ -44,8 +44,8 @@ function CustomTooltip({
       <p className="font-medium text-sm mb-2">{label}</p>
       {payload.map((entry, index) => (
         <div key={index} className="flex items-center gap-2 text-sm">
-          <div 
-            className="w-3 h-3 rounded-full" 
+          <div
+            className="w-3 h-3 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
           <span className="text-muted-foreground">{entry.name}:</span>
@@ -63,7 +63,8 @@ export function ProjectionChart({ monthlySavings }: ProjectionChartProps) {
   const projection = useMemo(() => {
     if (!currentUser) return []
     const transactions = getTransactionsByUser(currentUser.id)
-    return generateProjection(currentUser, transactions, events, monthlySavings)
+    const loans = getLoansByUser(currentUser.id)
+    return generateProjection(currentUser, transactions, events, loans, monthlySavings)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, monthlySavings, refreshKey])
 

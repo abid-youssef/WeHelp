@@ -5,8 +5,8 @@ import {
   updateGoal,
   deleteGoal,
   getUserById,
-} from "@/lib/store"
-import type { Goal } from "@/lib/seed-data"
+} from "@/mocks/store"
+import type { Goal } from "@/mocks/seed-data"
 
 // GET /api/goals?userId=xxx
 export async function GET(request: Request) {

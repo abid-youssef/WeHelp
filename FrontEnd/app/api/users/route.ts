@@ -1,5 +1,5 @@
-import { sql, generateId, parseNumeric } from '@/lib/db'
-import type { User, UserType } from '@/lib/types'
+import { sql, generateId, parseNumeric } from '@/mocks/db'
+import type { User, UserType } from '@/mocks/types'
 import { NextResponse } from 'next/server'
 
 function mapRowToUser(row: Record<string, unknown>): User {
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const id = generateId()
-    
+
     await sql`
       INSERT INTO users (id, name, email, user_type, current_balance, monthly_income, currency)
       VALUES (${id}, ${body.name}, ${body.email || null}, ${body.userType}, ${body.currentBalance || 0}, ${body.monthlyIncome || 0}, ${body.currency || 'TND'})

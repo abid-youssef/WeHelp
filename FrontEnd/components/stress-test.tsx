@@ -15,14 +15,14 @@ import {
   Legend,
 } from "recharts"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser, getCustomEventsByUser, getCustomStressTemplates } from "@/lib/store"
+import { getEvents, getTransactionsByUser, getCustomEventsByUser, getCustomStressTemplates } from "@/mocks/store"
 import {
   runEnhancedMonteCarlo,
   STRESS_PRESETS,
   type StressScenario,
   type MonteCarloResult,
   type EnhancedMonteCarloConfig,
-} from "@/lib/forecast"
+} from "@/mocks/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -123,19 +123,19 @@ export function StressTest({ monthlySavings }: StressTestProps) {
       // Prepare custom events for simulation
       const customEventCosts = includeCustomEvents
         ? customEvents.map((e) => {
-            const eventDate = new Date(e.startDate)
-            const now = new Date()
-            const monthsAway = Math.max(
-              1,
-              (eventDate.getFullYear() - now.getFullYear()) * 12 +
-                (eventDate.getMonth() - now.getMonth())
-            )
-            return {
-              month: monthsAway <= 6 ? monthsAway : 0,
-              cost: e.estimatedCost,
-              costStd: e.costStd,
-            }
-          }).filter((e) => e.month > 0)
+          const eventDate = new Date(e.startDate)
+          const now = new Date()
+          const monthsAway = Math.max(
+            1,
+            (eventDate.getFullYear() - now.getFullYear()) * 12 +
+            (eventDate.getMonth() - now.getMonth())
+          )
+          return {
+            month: monthsAway <= 6 ? monthsAway : 0,
+            cost: e.estimatedCost,
+            costStd: e.costStd,
+          }
+        }).filter((e) => e.month > 0)
         : []
 
       const config: EnhancedMonteCarloConfig = {
@@ -213,32 +213,32 @@ export function StressTest({ monthlySavings }: StressTestProps) {
             <SelectTrigger className="flex-1">
               <SelectValue placeholder="Select stress scenario" />
             </SelectTrigger>
-<SelectContent>
-  <SelectItem value="none">No Stress (Baseline)</SelectItem>
-  {STRESS_PRESETS.map((preset) => (
-  <SelectItem key={preset.id} value={preset.id}>
-  <div className="flex items-center gap-2">
-  <AlertTriangle className="w-4 h-4 text-warning" />
-  {preset.name}
-  </div>
-  </SelectItem>
-  ))}
-  {customTemplates.length > 0 && (
-    <>
-      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1 pt-1">
-        Custom Templates
-      </div>
-      {customTemplates.map((template) => (
-        <SelectItem key={template.id} value={template.id}>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-primary" />
-            {template.name}
-          </div>
-        </SelectItem>
-      ))}
-    </>
-  )}
-  </SelectContent>
+            <SelectContent>
+              <SelectItem value="none">No Stress (Baseline)</SelectItem>
+              {STRESS_PRESETS.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id}>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-warning" />
+                    {preset.name}
+                  </div>
+                </SelectItem>
+              ))}
+              {customTemplates.length > 0 && (
+                <>
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground border-t mt-1 pt-1">
+                    Custom Templates
+                  </div>
+                  {customTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-primary" />
+                        {template.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+            </SelectContent>
           </Select>
           <Button
             onClick={runSimulation}
@@ -338,8 +338,8 @@ export function StressTest({ monthlySavings }: StressTestProps) {
               <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 flex items-start gap-2">
                 <Info className="w-4 h-4 text-warning mt-0.5" />
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">Using default distributions</span> - 
-                  Not enough transaction history for reliable user-calibrated sampling. 
+                  <span className="font-medium text-foreground">Using default distributions</span> -
+                  Not enough transaction history for reliable user-calibrated sampling.
                   Results may be less accurate.
                 </p>
               </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useApp } from "./app-context"
-import { getUsers, getAdvisors } from "@/lib/store"
+import { getUsers, getAdvisors } from "@/mocks/store"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -97,38 +97,41 @@ export function LoginScreen() {
         </div>
 
         {/* Role Selection */}
-        <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold mb-2">Select Your Role</h2>
-          <p className="text-muted-foreground text-sm">
-            Choose how you want to access the system
-          </p>
-        </div>
-
-        <div className="flex justify-center gap-4 mb-8">
-          <Button
-            variant={mode === "client" ? "default" : "outline"}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <Card
+            className={`cursor-pointer transition-all border-2 ${mode === "client" ? "border-primary bg-primary/5 shadow-md" : "hover:border-primary/50"}`}
             onClick={() => setMode("client")}
-            className="gap-2 px-6 py-3"
-            size="lg"
           >
-            <User className="w-5 h-5" />
-            Sign in as Client
-          </Button>
-          <Button
-            variant={mode === "advisor" ? "default" : "outline"}
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <User className={`w-8 h-8 ${mode === "client" ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <CardTitle className="text-xl">Client Portal</CardTitle>
+              <CardDescription>Plan your life events and manage your finances</CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card
+            className={`cursor-pointer transition-all border-2 ${mode === "advisor" ? "border-primary bg-primary/5 shadow-md" : "hover:border-primary/50"}`}
             onClick={() => setMode("advisor")}
-            className="gap-2 px-6 py-3"
-            size="lg"
           >
-            <Shield className="w-5 h-5" />
-            Sign in as Advisor
-          </Button>
+            <CardHeader className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+                <Shield className={`w-8 h-8 ${mode === "advisor" ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <CardTitle className="text-xl">Bank Advisor</CardTitle>
+              <CardDescription>Review loan requests and support your clients</CardDescription>
+            </CardHeader>
+          </Card>
         </div>
 
         {/* Demo account label */}
-        <div className="text-center mb-4">
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-medium mb-2">
+            {mode === "client" ? "Select a Demo Client Account" : "Select an Advisor Account"}
+          </h3>
           <Badge variant="outline" className="text-xs">
-            {mode === "client" ? "10 Demo Client Accounts" : "2 Demo Advisor Accounts"}
+            {mode === "client" ? "Multiple Personas" : "Staff Access"}
           </Badge>
         </div>
 

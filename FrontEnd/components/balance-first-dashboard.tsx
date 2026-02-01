@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react"
 import { useApp } from "./app-context"
-import { getTransactionsByUser, getEvents, getGoalsByUser, getCustomEventsByUser, getActiveLoans } from "@/lib/store"
-import { generateTwinData } from "@/lib/forecast"
+import { getTransactionsByUser, getEvents, getGoalsByUser, getCustomEventsByUser, getActiveLoans, getLoansByUser, updateLifeEvent, updateCustomEvent } from "@/mocks/store"
+import { generateTwinData } from "@/mocks/forecast"
 import { BalanceProjectionChart } from "./balance-projection-chart"
 import { LifeCalendar } from "./life-calendar"
 import { CustomEvents } from "./custom-events"
@@ -13,6 +13,7 @@ import { SensitivityPanel } from "./sensitivity-panel"
 import { ReadinessScore } from "./readiness-score"
 import { ExplainabilityModal } from "./explainability-modal"
 import { LoanRequest } from "./loan-request"
+import { MonthlyObligations } from "./monthly-obligations"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -36,10 +37,15 @@ import {
   BarChart3,
   Zap,
   Banknote,
+  Clock,
+  CreditCard,
 } from "lucide-react"
 
 export function BalanceFirstDashboard() {
   const { currentUser, setCurrentUser, refreshKey, triggerRefresh } = useApp()
+  const [activeTab, setActiveTab] = useState("events")
+  const [loanTrigger, setLoanTrigger] = useState(0)
+  const [loanEventId, setLoanEventId] = useState<string | undefined>()
   const [monthlySavings, setMonthlySavings] = useState(0)
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>()
   const [explainModalOpen, setExplainModalOpen] = useState(false)
@@ -58,8 +64,14 @@ export function BalanceFirstDashboard() {
   const twinData = useMemo(() => {
     if (!currentUser) return null
     const transactions = getTransactionsByUser(currentUser.id)
-    return generateTwinData(currentUser, transactions, events, monthlySavings)
+    const loans = getLoansByUser(currentUser.id)
+    return generateTwinData(currentUser, transactions, events, loans, monthlySavings)
   }, [currentUser, events, monthlySavings, refreshKey])
+
+  const userLoans = useMemo(
+    () => (currentUser ? getLoansByUser(currentUser.id) : []),
+    [currentUser, refreshKey]
+  )
 
   if (!currentUser || !twinData) return null
 
@@ -162,15 +174,53 @@ export function BalanceFirstDashboard() {
               <div className="flex items-center gap-3">
                 <AlertTriangle className={`w-5 h-5 ${nextEvent.status === "at_risk" ? "text-warning" : "text-destructive"}`} />
                 <div>
-                  <p className="text-sm font-medium">{nextEvent.eventName} in {nextEvent.monthsAway} months</p>
+                  <p className="text-sm font-medium">
+                    {nextEvent.eventName} {nextEvent.monthsAway === 0 ? "starts this month" : nextEvent.monthsAway === 1 ? "starts next month" : `in ${nextEvent.monthsAway} months`}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Gap: {nextEvent.gapAmount.toLocaleString()} TND
                   </p>
                 </div>
               </div>
-              <Badge className={nextEvent.status === "at_risk" ? "bg-warning text-warning-foreground" : "bg-destructive text-destructive-foreground"}>
-                {nextEvent.readiness}% Ready
-              </Badge>
+              <div className="flex items-center gap-3">
+                {nextEvent.status === "critical" && (
+                  (() => {
+                    const existingLoan = userLoans.find(
+                      (l) =>
+                        l.eventId === nextEvent.eventId &&
+                        l.status !== "completed" &&
+                        l.status !== "rejected_by_advisor"
+                    );
+
+                    if (existingLoan) {
+                      return (
+                        <Badge variant="outline" className="h-8 gap-1 border-primary/50 text-primary">
+                          <Clock className="w-3 h-3" />
+                          {existingLoan.status.includes("approved") ? "Loan Approved" : "Loan Pending"}
+                        </Badge>
+                      );
+                    }
+
+                    return (
+                      <Button
+                        size="sm"
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1 h-8"
+                        onClick={() => {
+                          setActiveTab("loans");
+                          setLoanTrigger(Date.now());
+                          setLoanEventId(nextEvent.eventId);
+                        }}
+                      >
+                        <Banknote className="w-3.5 h-3.5" />
+                        Apply for Loan
+                      </Button>
+                    );
+                  })()
+                )}
+                <Badge className={nextEvent.status === "at_risk" ? "bg-warning text-warning-foreground" : "bg-destructive text-destructive-foreground"}>
+                  {nextEvent.readiness}% Ready
+                </Badge>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -183,8 +233,16 @@ export function BalanceFirstDashboard() {
         />
 
         {/* Secondary Tabs */}
-        <Tabs defaultValue="events" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           <TabsList className="w-full justify-start">
+            <TabsTrigger value="bills" className="gap-1">
+              <CreditCard className="w-4 h-4" />
+              Bills
+            </TabsTrigger>
             <TabsTrigger value="events" className="gap-1">
               <Calendar className="w-4 h-4" />
               Events
@@ -197,15 +255,16 @@ export function BalanceFirstDashboard() {
               <Zap className="w-4 h-4" />
               Stress Test
             </TabsTrigger>
-<TabsTrigger value="readiness" className="gap-1">
-  <BarChart3 className="w-4 h-4" />
-  Readiness
-  </TabsTrigger>
-  <TabsTrigger value="loans" className="gap-1">
-  <Banknote className="w-4 h-4" />
-  Loans
-  </TabsTrigger>
-  </TabsList>
+            <TabsTrigger value="readiness" className="gap-1">
+              <BarChart3 className="w-4 h-4" />
+              Readiness
+            </TabsTrigger>
+            <TabsTrigger value="loans" className="gap-1">
+              <Banknote className="w-4 h-4" />
+              Loans
+            </TabsTrigger>
+
+          </TabsList>
 
           <TabsContent value="events" className="mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -234,7 +293,18 @@ export function BalanceFirstDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <ReadinessScore
                 selectedEventId={selectedEventId || twinData.eventReadiness[0]?.eventId}
-                onExplainClick={() => setExplainModalOpen(true)}
+                onExplainClick={(id) => {
+                  setSelectedEventId(id)
+                  setExplainModalOpen(true)
+                }}
+                onAdvisorClick={(id) => {
+                  if (id.startsWith("custom_")) {
+                    updateCustomEvent(id, { consultationRequested: true })
+                  } else {
+                    updateLifeEvent(id, { consultationRequested: true })
+                  }
+                  triggerRefresh()
+                }}
               />
               <Card>
                 <CardHeader>
@@ -252,7 +322,7 @@ export function BalanceFirstDashboard() {
                         <div>
                           <p className="font-medium text-sm">{er.eventName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {er.monthsAway} months away
+                            {er.monthsAway === 0 ? "Starting this month" : er.monthsAway === 1 ? "Next month" : `${er.monthsAway} months away`}
                             {er.gapAmount > 0 && ` • Gap: ${er.gapAmount.toLocaleString()} TND`}
                           </p>
                         </div>
@@ -275,16 +345,24 @@ export function BalanceFirstDashboard() {
                   </div>
                 </CardContent>
               </Card>
-</div>
-  </TabsContent>
-  
-  <TabsContent value="loans" className="mt-4">
-  <LoanRequest onLoanCreated={triggerRefresh} />
-  </TabsContent>
-  </Tabs>
-  </main>
-  
-  {/* Explainability Modal */}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="loans" className="mt-4">
+            <LoanRequest
+              onLoanCreated={triggerRefresh}
+              trigger={loanTrigger}
+              eventId={loanEventId}
+            />
+          </TabsContent>
+
+          <TabsContent value="bills" className="mt-4">
+            <MonthlyObligations />
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Explainability Modal */}
       <ExplainabilityModal
         isOpen={explainModalOpen}
         onClose={() => setExplainModalOpen(false)}
@@ -310,11 +388,11 @@ export function BalanceFirstDashboard() {
                 Balance = Previous Month + Income - Outflows - Event Costs + Savings
               </p>
             </div>
-            
+
             <div className="p-3 rounded-lg bg-muted/50">
               <h4 className="font-medium mb-1">Aggregated Outflows</h4>
               <p className="text-muted-foreground">
-                All recurring expenses (rent, utilities, groceries, subscriptions) are summed into a single monthly outflow figure. 
+                All recurring expenses (rent, utilities, groceries, subscriptions) are summed into a single monthly outflow figure.
                 You can tap any month to see the breakdown.
               </p>
             </div>
@@ -322,7 +400,7 @@ export function BalanceFirstDashboard() {
             <div className="p-3 rounded-lg bg-muted/50">
               <h4 className="font-medium mb-1">Event Costs (User-Defined)</h4>
               <p className="text-muted-foreground">
-                When you add an event, you specify the estimated cost and error margin (e.g., 600 ± 150 TND). 
+                When you add an event, you specify the estimated cost and error margin (e.g., 600 ± 150 TND).
                 The projection samples from this distribution to show realistic uncertainty.
               </p>
             </div>
@@ -330,7 +408,7 @@ export function BalanceFirstDashboard() {
             <div className="p-3 rounded-lg bg-muted/50">
               <h4 className="font-medium mb-1">Confidence Bands (Monte Carlo)</h4>
               <p className="text-muted-foreground">
-                We run 30 simulations with random variations in income, expenses, and event costs. 
+                We run 30 simulations with random variations in income, expenses, and event costs.
                 The shaded area shows the 10th to 90th percentile range - your balance will likely fall within this band.
               </p>
             </div>

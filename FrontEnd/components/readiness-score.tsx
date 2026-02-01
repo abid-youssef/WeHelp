@@ -2,8 +2,8 @@
 
 import { useMemo } from "react"
 import { useApp } from "./app-context"
-import { getEvents, getTransactionsByUser, getEventById } from "@/lib/store"
-import { calculateReadiness } from "@/lib/forecast"
+import { getEvents, getTransactionsByUser, getAnyEventById } from "@/mocks/store"
+import { calculateReadiness, type ReadinessScore as ReadinessScoreType } from "@/mocks/forecast"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -13,20 +13,22 @@ import {
   Minus,
   HelpCircle,
   MessageCircle,
+  Check,
 } from "lucide-react"
 
 interface ReadinessScoreProps {
   selectedEventId?: string
-  onExplainClick: () => void
+  onExplainClick: (eventId: string) => void
+  onAdvisorClick: (eventId: string) => void
 }
 
-export function ReadinessScore({ selectedEventId, onExplainClick }: ReadinessScoreProps) {
+export function ReadinessScore({ selectedEventId, onExplainClick, onAdvisorClick }: ReadinessScoreProps) {
   const { currentUser, refreshKey } = useApp()
   const events = getEvents()
 
   const readinessData = useMemo(() => {
     if (!currentUser || !selectedEventId) return null
-    const event = getEventById(selectedEventId)
+    const event = getAnyEventById(selectedEventId)
     if (!event) return null
     const transactions = getTransactionsByUser(currentUser.id)
     return {
@@ -75,6 +77,8 @@ export function ReadinessScore({ selectedEventId, onExplainClick }: ReadinessSco
     return "bg-destructive"
   }
 
+  const isPending = 'consultationRequested' in event && event.consultationRequested
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -83,7 +87,7 @@ export function ReadinessScore({ selectedEventId, onExplainClick }: ReadinessSco
             <CardTitle className="text-lg">Readiness Score</CardTitle>
             <CardDescription>For {event.name}</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" onClick={onExplainClick} className="gap-1">
+          <Button variant="ghost" size="sm" onClick={() => onExplainClick(event.id)} className="gap-1">
             <HelpCircle className="w-4 h-4" />
             Explain
           </Button>
@@ -141,13 +145,12 @@ export function ReadinessScore({ selectedEventId, onExplainClick }: ReadinessSco
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-medium truncate">{driver.name}</p>
                   <span
-                    className={`text-sm font-medium ${
-                      driver.impact === "positive"
-                        ? "text-success"
-                        : driver.impact === "negative"
-                          ? "text-destructive"
-                          : "text-muted-foreground"
-                    }`}
+                    className={`text-sm font-medium ${driver.impact === "positive"
+                      ? "text-success"
+                      : driver.impact === "negative"
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                      }`}
                   >
                     {typeof driver.value === "number" && driver.name.includes("Rate")
                       ? `${driver.value}%`
@@ -163,9 +166,23 @@ export function ReadinessScore({ selectedEventId, onExplainClick }: ReadinessSco
         </div>
 
         <div className="pt-2 border-t">
-          <Button variant="outline" className="w-full gap-2 bg-transparent">
-            <MessageCircle className="w-4 h-4" />
-            Ask an Advisor
+          <Button
+            variant={isPending ? "secondary" : "outline"}
+            className="w-full gap-2 bg-transparent"
+            onClick={() => onAdvisorClick(event.id)}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <>
+                <Check className="w-4 h-4 text-success" />
+                Consultation Requested
+              </>
+            ) : (
+              <>
+                <MessageCircle className="w-4 h-4" />
+                Ask an Advisor
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
