@@ -504,45 +504,101 @@ def _months_to_target(timeline: list, target: float) -> int | None:
 
 
 def generate_mock_transactions(user_id: str, num_days: int = 365) -> List[dict]:
-    """Generate realistic mock transaction data for a user."""
-    np.random.seed(hash(user_id) % 2**32)
+    """Generate realistic mock transaction data for a user in Tunisian Dinars (TND)."""
+    # Use deterministic seed for consistent demo data per user
+    seed_val = int(hash(user_id) % 2**32)
+    np.random.seed(seed_val)
     
     transactions = []
-    start_date = datetime.now() - timedelta(days=num_days)
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=num_days)
     
-    # Base daily spending pattern
-    base_amount = 30.0  # TND
-    
+    # 1. Monthly Recurring (Income & Bills)
+    # -------------------------------------
+    current = start_date
+    while current <= end_date:
+        # Salary (Income): 1200 - 2500 TND around 25th-28th
+        if current.day == 26:
+            salary = np.random.uniform(1800, 2200)
+            transactions.append({
+                "date": current.isoformat(),
+                "category": "Salary",
+                "amount": round(salary, 2),
+                "type": "income"
+            })
+            
+        # Rent (Expense): 500 - 900 TND around 1st-3rd
+        if current.day == 2:
+            rent = np.random.uniform(600, 800)
+            transactions.append({
+                "date": current.isoformat(),
+                "category": "Rent",
+                "amount": round(rent, 2),
+                "type": "expense"
+            })
+            
+        # Utilities (Expense): 80 - 150 TND around 10th
+        if current.day == 10:
+            util = np.random.uniform(80, 150)
+            transactions.append({
+                "date": current.isoformat(),
+                "category": "Utilities",
+                "amount": round(util, 2),
+                "type": "expense"
+            })
+            
+        current += timedelta(days=1)
+
+    # 2. Daily Variable Expenses
+    # --------------------------
     for day in range(num_days):
         current_date = start_date + timedelta(days=day)
         month = current_date.month
         
-        # Apply seasonal multiplier
+        # Seasonal Multiplier (e.g., Ramadan, Summer)
         multiplier = MONTHLY_MULTIPLIERS.get(month, 1.0)
         
-        # Generate 1-3 transactions per day
-        num_transactions = np.random.randint(1, 4)
-        
-        for _ in range(num_transactions):
-            # Random category
-            category = np.random.choice(EXPENSE_CATEGORIES)
-            
-            # Amount with some randomness
-            amount = base_amount * multiplier * np.random.uniform(0.5, 2.0)
-            
-            # Occasional income
-            if np.random.random() < 0.05:  # 5% chance of income
-                trans_type = "income"
-                amount = base_amount * np.random.uniform(30, 100)  # Larger amounts for income
+        # Variable Expense Probability: 70% chance of spending each day
+        if np.random.random() < 0.7:
+            # Coffee/Food: 5 - 25 TND
+            if np.random.random() < 0.6:
+                amount = np.random.uniform(5, 25) * multiplier
+                category = "Food & Drink"
+            # Transport: 2 - 15 TND
+            elif np.random.random() < 0.3:
+                amount = np.random.uniform(2, 15) * multiplier
+                category = "Transport"
+            # Grocery Run: 40 - 120 TND (less frequent)
             else:
-                trans_type = "expense"
-            
+                amount = np.random.uniform(40, 120) * multiplier
+                category = "Groceries"
+                
             transactions.append({
                 "date": current_date.isoformat(),
                 "category": category,
                 "amount": round(amount, 2),
-                "type": trans_type
+                "type": "expense"
             })
+
+    # 3. Occasional Expenses (Weekly/Bi-weekly)
+    # -----------------------------------------
+    # Entertainment / Shopping
+    current = start_date
+    while current <= end_date:
+        # Every weekend (Friday/Saturday)
+        if current.weekday() in [4, 5]: 
+            if np.random.random() < 0.5: # 50% chance on weekends
+                amount = np.random.uniform(50, 200)
+                transactions.append({
+                    "date": current.isoformat(),
+                    "category": "Entertainment",
+                    "amount": round(amount, 2),
+                    "type": "expense"
+                })
+        current += timedelta(days=1)
+
+    # Sort by date
+    transactions.sort(key=lambda x: x["date"])
     
     return transactions
 
@@ -552,74 +608,96 @@ def forecast_with_prophet(
     forecast_days: int = 90,
     include_holidays: bool = True
 ) -> dict[str, Any]:
-    """Use Prophet to forecast future transactions."""
+    """Use Prophet to forecast future EXPENSES only."""
     
-    # Prepare data for Prophet
-    df_data = []
+    # 1. Filter & Prepare Data
+    # Only keep expenses. Income confuses the expense forecast model.
+    expense_data = []
     for trans in transactions:
-        df_data.append({
-            'ds': trans.date,
-            'y': trans.amount if trans.type == "expense" else -trans.amount  # Negative for income
-        })
+        if trans.type == 'expense':
+            # Ensure date is date-only for daily aggregation
+            date_only = trans.date.date() if isinstance(trans.date, datetime) else trans.date
+            expense_data.append({
+                'ds': date_only,
+                'y': trans.amount 
+            })
+            
+    if not expense_data:
+        # Fallback if no expenses
+        return {
+            "forecast_period_days": forecast_days,
+            "predictions": [],
+            "summary": {"total": 0, "avg": 0, "msg": "No expense data found"},
+            "model_info": {}
+        }
     
-    df = pd.DataFrame(df_data)
+    df = pd.DataFrame(expense_data)
     
-    # Aggregate by day
-    df_daily = df.groupby('ds').agg({'y': 'sum'}).reset_index()
+    # 2. Aggregate by Day (Sum daily expenses)
+    df_daily = df.groupby('ds')['y'].sum().reset_index()
     df_daily = df_daily.sort_values('ds')
     
-    # Initialize Prophet model
+    # Check data duration
+    data_duration_days = (df_daily['ds'].max() - df_daily['ds'].min()).days
+    
+    # 3. Configure Prophet
+    # Yearly seasonality needs at least 1-2 years of data
+    use_yearly = True if data_duration_days > 365 else False
+    
     model = Prophet(
-        yearly_seasonality=True,
+        yearly_seasonality=use_yearly,
         weekly_seasonality=True,
         daily_seasonality=False,
         changepoint_prior_scale=0.05,
+        seasonality_mode='multiplicative' # Expenses often scale with trend
     )
     
-    # Add Tunisian holidays if requested
+    # 4. Add Holidays
     if include_holidays:
-        model.add_country_holidays(country_name='TN')
-        # Add custom holidays
-        for _, holiday in TUNISIAN_HOLIDAYS.iterrows():
-            model.add_seasonality(
-                name=holiday['holiday'],
-                period=365.25,
-                fourier_order=3
-            )
+        try:
+            model.add_country_holidays(country_name='TN')
+        except:
+            pass # Fallback if TN holidays not supported in installed py-holidays ver
     
-    # Fit the model
+    # 5. Fit & Predict
     model.fit(df_daily)
     
-    # Create future dataframe
     future = model.make_future_dataframe(periods=forecast_days)
-    
-    # Predict
     forecast = model.predict(future)
     
-    # Extract forecast data (only future dates)
+    # 6. Extract & Format Results
     last_date = df_daily['ds'].max()
-    forecast_future = forecast[forecast['ds'] > last_date].copy()
+    # Ensure comparsion works (timestamps)
+    last_date_ts = pd.Timestamp(last_date)
+    forecast_future = forecast[forecast['ds'] > last_date_ts].copy()
     
-    # Prepare response
     predictions = []
     for _, row in forecast_future.iterrows():
+        # Clamp negative predictions to 0
+        predicted_val = max(0, row['yhat'])
+        
         predictions.append({
             "date": row['ds'].strftime('%Y-%m-%d'),
-            "predicted_amount": round(max(0, row['yhat']), 2),  # Don't allow negative
+            "predicted_amount": round(predicted_val, 2),
             "lower_bound": round(max(0, row['yhat_lower']), 2),
             "upper_bound": round(max(0, row['yhat_upper']), 2),
             "trend": round(row['trend'], 2),
         })
     
-    # Calculate summary statistics
-    total_predicted = sum(p['predicted_amount'] for p in predictions)
-    avg_daily = total_predicted / len(predictions) if predictions else 0
-    
-    # Identify high-expense periods
-    high_expense_days = [
-        p for p in predictions 
-        if p['predicted_amount'] > avg_daily * 1.5
-    ]
+    # Summary stats
+    if predictions:
+        total_predicted = sum(p['predicted_amount'] for p in predictions)
+        avg_daily = total_predicted / len(predictions)
+        
+        # High expense threshold (rent days etc)
+        high_expense_days = [
+            p for p in predictions 
+            if p['predicted_amount'] > avg_daily * 2.0
+        ]
+    else:
+        total_predicted = 0
+        avg_daily = 0
+        high_expense_days = []
     
     return {
         "forecast_period_days": forecast_days,
@@ -628,13 +706,12 @@ def forecast_with_prophet(
             "total_predicted_expenses": round(total_predicted, 2),
             "average_daily_expense": round(avg_daily, 2),
             "high_expense_days_count": len(high_expense_days),
-            "high_expense_days": [p['date'] for p in high_expense_days[:10]],  # Top 10
+            "high_expense_days": [p['date'] for p in high_expense_days[:10]],
         },
         "model_info": {
-            "training_data_points": len(df_daily),
-            "includes_holidays": include_holidays,
-            "forecast_start_date": predictions[0]['date'] if predictions else None,
-            "forecast_end_date": predictions[-1]['date'] if predictions else None,
+            "training_days": data_duration_days,
+            "yearly_seasonality": use_yearly,
+            "forecast_start": predictions[0]['date'] if predictions else None
         }
     }
 
