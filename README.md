@@ -44,7 +44,7 @@ The **TwinSight Dashboard** provides high-fidelity simulations and actionable in
     *   🐏 **Eid al-Adha**: Large occasional expenses.
     *   🎓 **Back to School**: Education-related liquidity dips.
 3.  **Stress Testing**: "What if I lose my job for 3 months?" or "What if inflation hits 20%?". The app perturbs your digital twin and extracts a **Resilience Score**.
-4.  **Advisor Dashboard**: A dedicated view for financial advisors to analyze client risk with full explainability.
+4.  **Advisor Dashboard**: A dedicated view for financial advisors to analyze client risk with full explainability and approve/reject loan requests.
 
 ---
 
