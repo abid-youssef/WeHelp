@@ -1,46 +1,75 @@
-# WeHelp - Financial Digital Twin
+<p align="center">
+  <img src="assets/twinSightLogo.png" alt="TwinSight Logo" width="200"/>
+</p>
 
-A personalized financial prediction system for Tunisian users.
+<h1 align="center">TwinSight - Financial Life Companion</h1>
 
-## Overview
+<p align="center">
+  AI-assisted banking that anticipates your financial future
+</p>
 
-WeHelp creates a **Financial Digital Twin** - a personalized financial model that understands spending patterns and enables what-if simulations for informed financial decisions.
+<p align="center">
+  <a href="http://34.155.235.146:3000/">
+    <img src="https://img.shields.io/badge/Live%20Demo-View%20App-blue?style=for-the-badge" alt="Live Demo"/>
+  </a>
+</p>
 
-## Components
+---
+
+## What is TwinSight?
+
+TwinSight creates a **Digital Twin** of your financial life. Instead of showing static balances, it simulates how your finances evolve month-by-month accounting for income, expenses, life events (Ramadan, Eid, weddings, back-to-school), and unexpected shocks.
+
+**For Users**: See your future balance, stress-test decisions, get actionable savings advice.  
+**For Banks**: Better risk visibility, faster loan decisions, client segmentation.
+
+---
+
+## Repository Contents
 
 | Component | Description |
 |-----------|-------------|
-| `financial_twin_api/` | REST API for digital twin creation, forecasting, and simulations |
+| `FrontEnd/` | Next.js web application |
+| `financial_twin_api/` | FastAPI backend for forecasting and simulations |
 | `financial_twin_analysis.ipynb` | Dataset exploration and behavioral modeling |
+| `POC_Prophet.ipynb` | Time-series forecasting with Prophet + Tunisian holidays |
+| `POC_User_Categorization.ipynb` | User segmentation (5 spending profiles) |
+| `loan_risk_breakdown_nb.ipynb` | Loan risk scoring and explainability |
+
+---
 
 ## Quick Start
 
 ```bash
+# Backend API
 cd financial_twin_api
-python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Run API
 python -m uvicorn app.main:app --reload
 
-# Run tests
-python -m pytest tests/ -v
+# Frontend
+cd FrontEnd
+pnpm install && pnpm dev
 ```
 
-## API Endpoints
+---
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/v1/twins` | Create digital twin |
-| `GET /api/v1/twins/{id}/forecast` | 12-month cash flow forecast |
-| `POST /api/v1/twins/{id}/simulate` | What-if scenario simulation |
-| `POST /api/v1/twins/{id}/recommend-loan` | Loan affordability check |
+## Google Cloud Resources
+
+| Service | Usage |
+|---------|-------|
+| **Google Colab** | Notebook execution and model training |
+| **Google Cloud Platform** | App deployment and hosting |
+
+---
 
 ## Tech Stack
 
-- **FastAPI** + **Pydantic** - API
-- **Pandas** + **Scikit-learn** - ML
-- **NumPy** - Computations
+- **Frontend**: Next.js, TypeScript, Tailwind CSS
+- **Backend**: FastAPI, Pydantic, NumPy
+- **ML/Analysis**: Pandas, Scikit-learn, Prophet
+- **Deployment**: Google Cloud Platform
+
+---
 
 ## License
 
